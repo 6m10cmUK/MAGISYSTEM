@@ -1,0 +1,39 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Minecraft temporary files
+*.tmp
+*.bak
+
+# Build outputs
+dist/
+build/
+
+# Logs
+logs/
+*.log
+
+# Test files
+test/
+*.test.js
+
+# Environment files
+.env
+.env.local
+
+.claude/
+__think__/
+CLAUDE.md

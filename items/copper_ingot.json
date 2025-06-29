@@ -1,0 +1,22 @@
+{
+  "format_version": "1.21.50",
+  "minecraft:item": {
+    "description": {
+      "identifier": "magisystem:copper_ingot",
+      "menu_category": {
+        "category": "items"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "textures": {
+          "default": "copper_ingot"
+        }
+      },
+      "minecraft:max_stack_size": 64,
+      "minecraft:display_name": {
+        "value": "銅インゴット"
+      }
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "format_version": "1.21.60",
+  "minecraft:item": {
+    "description": {
+      "identifier": "magisystem:cable",
+      "menu_category": {
+        "category": "items"
+      }
+    },
+    "components": {
+      "minecraft:icon": "cable",
+      "minecraft:display_name": {
+        "value": "エネルギーケーブル"
+      },
+      "minecraft:block_placer": {
+        "block": "magisystem:cable"
+      },
+      "minecraft:max_stack_size": 64
+    }
+  }
+}

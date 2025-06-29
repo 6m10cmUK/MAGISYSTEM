@@ -1,0 +1,17 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:item": {
+    "description": {
+      "identifier": "magisystem:pipe_output"
+    },
+    "components": {
+      "minecraft:icon": "coal",
+      "minecraft:display_name": {
+        "value": "§8アイテムパイプ（出力専用）"
+      },
+      "minecraft:block_placer": {
+        "block": "magisystem:pipe_output"
+      }
+    }
+  }
+}

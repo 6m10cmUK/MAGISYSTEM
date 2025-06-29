@@ -1,0 +1,22 @@
+{
+  "format_version": "1.21.50",
+  "minecraft:item": {
+    "description": {
+      "identifier": "magisystem:iron_gear",
+      "menu_category": {
+        "category": "items"
+      }
+    },
+    "components": {
+      "minecraft:icon": {
+        "textures": {
+          "default": "iron_gear"
+        }
+      },
+      "minecraft:max_stack_size": 64,
+      "minecraft:display_name": {
+        "value": "鉄の歯車"
+      }
+    }
+  }
+}

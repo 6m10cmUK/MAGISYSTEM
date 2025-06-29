@@ -1,0 +1,91 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:block": {
+    "description": {
+      "identifier": "magisystem:cable_output",
+      "menu_category": {
+        "category": "items"
+      },
+      "states": {
+        "magisystem:above": ["none", "cable", "block"],
+        "magisystem:below": ["none", "cable", "block"],
+        "magisystem:north": ["none", "cable", "block"],
+        "magisystem:south": ["none", "cable", "block"],
+        "magisystem:east": ["none", "cable", "block"],
+        "magisystem:west": ["none", "cable", "block"],
+        "magisystem:mf_type": ["none", "mf"],
+        "magisystem:is_straight": [false, true]
+      }
+    },
+    "components": {
+      "minecraft:destructible_by_mining": {
+        "seconds_to_destroy": 0.2
+      },
+      "minecraft:destructible_by_explosion": {
+        "explosion_resistance": 10
+      },
+      "minecraft:loot": "loot_tables/blocks/cable_output.json",
+      "minecraft:map_color": "#FF9090",
+      "minecraft:geometry": {
+        "identifier": "geometry.cable",
+        "bone_visibility": {
+          "center": "!q.block_state('magisystem:is_straight')",
+          "up": "q.block_state('magisystem:above') != 'none'",
+          "up_connector": "q.block_state('magisystem:above') == 'block'",
+          "down": "q.block_state('magisystem:below') != 'none'",
+          "down_connector": "q.block_state('magisystem:below') == 'block'",
+          "north": "q.block_state('magisystem:north') != 'none'",
+          "north_connector": "q.block_state('magisystem:north') == 'block'",
+          "south": "q.block_state('magisystem:south') != 'none'",
+          "south_connector": "q.block_state('magisystem:south') == 'block'",
+          "east": "q.block_state('magisystem:east') != 'none'",
+          "east_connector": "q.block_state('magisystem:east') == 'block'",
+          "west": "q.block_state('magisystem:west') != 'none'",
+          "west_connector": "q.block_state('magisystem:west') == 'block'"
+        }
+      },
+      "minecraft:material_instances": {
+        "*": {
+          "texture": "redstone_block",
+          "render_method": "opaque"
+        }
+      },
+      "minecraft:collision_box": {
+        "origin": [-4, 4, -4],
+        "size": [8, 8, 8]
+      },
+      "minecraft:selection_box": {
+        "origin": [-4, 4, -4],
+        "size": [8, 8, 8]
+      },
+      "tag:mf_cable": {},
+      "tag:energy_conduit": {},
+      "tag:energy_output_only": {}
+    },
+    "permutations": [
+      {
+        "condition": "q.block_state('magisystem:mf_type') == 'none'",
+        "components": {
+          "minecraft:material_instances": {
+            "*": {
+              "texture": "redstone_block",
+              "render_method": "opaque"
+            }
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('magisystem:mf_type') == 'mf'",
+        "components": {
+          "minecraft:material_instances": {
+            "*": {
+              "texture": "gold_block",
+              "render_method": "opaque"
+            }
+          },
+          "minecraft:light_emission": 3
+        }
+      }
+    ]
+  }
+}

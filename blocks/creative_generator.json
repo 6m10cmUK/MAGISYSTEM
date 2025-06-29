@@ -1,0 +1,49 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:block": {
+    "description": {
+      "identifier": "magisystem:creative_generator",
+      "menu_category": {
+        "category": "equipment"
+      },
+      "states": {
+        "magisystem:active": [0, 1]
+      }
+    },
+    "components": {
+      "minecraft:collision_box": {
+        "origin": [-8, 0, -8],
+        "size": [16, 16, 16]
+      },
+      "minecraft:selection_box": {
+        "origin": [-8, 0, -8],
+        "size": [16, 16, 16]
+      },
+      "minecraft:geometry": "minecraft:geometry.full_block",
+      "minecraft:material_instances": {
+        "*": {
+          "texture": "diamond_block",
+          "render_method": "opaque"
+        }
+      },
+      "minecraft:destructible_by_mining": {
+        "seconds_to_destroy": 4.0
+      },
+      "minecraft:destructible_by_explosion": {
+        "explosion_resistance": 50
+      },
+      "minecraft:map_color": "#00FFFF",
+      "minecraft:light_emission": 15,
+      "minecraft:loot": "loot_tables/blocks/creative_generator.json",
+      "minecraft:placement_filter": {
+        "conditions": [
+          {
+            "allowed_faces": ["up", "down", "north", "south", "east", "west"]
+          }
+        ]
+      },
+      "tag:energy_generator": {},
+      "tag:creative_mode": {}
+    }
+  }
+}

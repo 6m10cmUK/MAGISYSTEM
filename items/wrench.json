@@ -1,0 +1,14 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:item": {
+    "description": {
+      "identifier": "magisystem:wrench"
+    },
+    "components": {
+      "minecraft:icon": "stick",
+      "minecraft:display_name": {
+        "value": "§eレンチ"
+      }
+    }
+  }
+}

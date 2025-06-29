@@ -1,0 +1,28 @@
+{
+  "format_version": "1.21.50",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "magisystem:iron_gear"
+    },
+    "tags": ["crafting_table"],
+    "pattern": [
+      " I ",
+      "III",
+      " I "
+    ],
+    "key": {
+      "I": {
+        "item": "minecraft:iron_ingot"
+      }
+    },
+    "unlock": [
+      {
+        "item": "minecraft:iron_ingot"
+      }
+    ],
+    "result": {
+      "item": "magisystem:iron_gear",
+      "count": 2
+    }
+  }
+}

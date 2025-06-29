@@ -1,0 +1,17 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:item": {
+    "description": {
+      "identifier": "magisystem:cable_output"
+    },
+    "components": {
+      "minecraft:icon": "redstone",
+      "minecraft:display_name": {
+        "value": "§cエネルギーケーブル（出力専用）"
+      },
+      "minecraft:block_placer": {
+        "block": "magisystem:cable_output"
+      }
+    }
+  }
+}
