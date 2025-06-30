@@ -18,17 +18,11 @@ export class DisplayFormatter {
         switch (info.type) {
             case "energy":
                 if (info.data.isActive !== undefined) {
-                    parts.push(`§7状態: ${info.data.isActive ? "§a稼働中" : "§c停止中"}`);
                     if (info.data.isActive && info.data.generationRate) {
                         parts.push(`§7発電: §a${info.data.generationRate} MF/s`);
                     }
                 }
-                parts.push(`§7エネルギー: §f${InfoGatherer.formatNumber(info.data.energy)}/${InfoGatherer.formatNumber(info.data.maxEnergy)} MF`);
-                parts.push(`§7充電率: §f${info.data.percent}%`);
-                
-                if (info.data.transferRate) {
-                    parts.push(`§7転送: §f${info.data.transferRate} MF/s`);
-                }
+                parts.push(`§f${InfoGatherer.formatNumber(info.data.energy)}/${InfoGatherer.formatNumber(info.data.maxEnergy)} MF(§f${info.data.percent}%)`);
                 break;
 
             case "cable":
