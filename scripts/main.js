@@ -8,6 +8,7 @@ import { Constants } from "./core/Constants.js";
 import { ErrorHandler } from "./core/ErrorHandler.js";
 import { Logger } from "./core/Logger.js";
 import { energySystem } from "./energy/EnergySystem.js";
+import { itemTransportManager } from "./items/ItemTransportManager.js";
 // import { burnProgressDisplay } from "./ui/BurnProgressDisplay.js";
 
 // 初期化
@@ -47,6 +48,9 @@ class MagisystemMain {
     static registerWorldInitialize() {
         world.afterEvents.worldInitialize.subscribe(() => {
             Logger.info("ワールドが正常に初期化されました！", "Main");
+            
+            // アイテム輸送システムを開始
+            itemTransportManager.start();
             
             // エネルギーシステムの初期化を確実に実行
             energySystem.initializeScoreboard();
@@ -125,6 +129,9 @@ class MagisystemMain {
                     break;
                 case "loglevel":
                     this.setLogLevel(player, args[2]);
+                    break;
+                case "item":
+                    this.checkItemTransport(player);
                     break;
                 
                 case "help":
@@ -224,12 +231,68 @@ class MagisystemMain {
             "§7!magisystem scoreboard - スコアボードの状態確認",
             "§7!magisystem energy - Dynamic Propertyのエネルギーデータ確認",
             "§7!magisystem loglevel <level> - ログレベルの設定",
+            "§7!magisystem item - アイテム輸送システムの状態確認",
             "§7!magisystem help - このヘルプを表示",
             "§7レンチで機械を右クリック - エネルギー情報を表示",
             "§7スニーク+レンチ - 機械の設定（開発中）"
         ];
         
         helpMessages.forEach(msg => player.sendMessage(msg));
+    }
+    
+    static checkItemTransport(player) {
+        const debugInfo = itemTransportManager.getDebugInfo();
+        
+        player.sendMessage("§e=== アイテム輸送システム状態 ===");
+        player.sendMessage(`§7稼働状態: ${debugInfo.isRunning ? "§a稼働中" : "§c停止中"}`);
+        player.sendMessage(`§7輸送元: §f${debugInfo.transportSources}個`);
+        player.sendMessage(`§7経過Tick: §f${debugInfo.tickCounter}`);
+        
+        // 手動スキャンを実行
+        player.sendMessage("§7手動スキャンを実行中...");
+        itemTransportManager.scanForExistingOutputPipes();
+        
+        // 周囲の出力パイプをスキャン
+        const radius = 10;
+        let outputPipeCount = 0;
+        let connectedInventoryCount = 0;
+        
+        for (let x = -radius; x <= radius; x++) {
+            for (let y = -radius; y <= radius; y++) {
+                for (let z = -radius; z <= radius; z++) {
+                    const location = {
+                        x: Math.floor(player.location.x) + x,
+                        y: Math.floor(player.location.y) + y,
+                        z: Math.floor(player.location.z) + z
+                    };
+                    
+                    const block = player.dimension.getBlock(location);
+                    if (block?.typeId === "magisystem:pipe_output") {
+                        outputPipeCount++;
+                        
+                        // 隣接インベントリをチェック
+                        const adjacents = [
+                            block.above(),
+                            block.below(),
+                            block.north(),
+                            block.south(),
+                            block.east(),
+                            block.west()
+                        ];
+                        
+                        for (const adj of adjacents) {
+                            if (adj && itemPipeSystem.hasInventory(adj)) {
+                                connectedInventoryCount++;
+                                player.sendMessage(`§7- ${adj.typeId} at ${Utils.locationToKey(adj.location)}`);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        player.sendMessage(`§7周囲の出力パイプ: §f${outputPipeCount}個`);
+        player.sendMessage(`§7接続されたインベントリ: §f${connectedInventoryCount}個`);
     }
     
     static registerItemPickupPrevention() {

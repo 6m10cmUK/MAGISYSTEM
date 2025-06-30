@@ -31,7 +31,8 @@ export class BaseTransportSystem {
         
         // キャッシュ
         this.connectionCache = new Map();
-        this.cacheTimeout = Constants.PERFORMANCE.CACHE_DURATION;
+        // アイテムパイプの場合はキャッシュを短くする
+        this.cacheTimeout = this.transporterType === "pipe" ? 1000 : Constants.PERFORMANCE.CACHE_DURATION;
         
         Logger.info(`${this.systemName}システムを初期化`, this.systemName);
     }
@@ -62,13 +63,54 @@ export class BaseTransportSystem {
      * @param {Block} block 
      */
     updateDirectionStates(block) {
+        // 全ての方向の状態を収集
+        const newStates = {};
+        const currentStates = block.permutation.getAllStates();
+        
         // 注意: Minecraft APIの東西は実際の方向と逆
-        this.setDirectionState(block, "above", this.canConnectToDirection(block, block.above(), "below"));
-        this.setDirectionState(block, "below", this.canConnectToDirection(block, block.below(), "above"));
-        this.setDirectionState(block, "north", this.canConnectToDirection(block, block.north(), "south"));
-        this.setDirectionState(block, "south", this.canConnectToDirection(block, block.south(), "north"));
-        this.setDirectionState(block, "east", this.canConnectToDirection(block, block.west(), "east"));    // 東西逆
-        this.setDirectionState(block, "west", this.canConnectToDirection(block, block.east(), "west"));    // 東西逆
+        const directions = [
+            { dir: "above", adjacent: block.above(), opposite: "below" },
+            { dir: "below", adjacent: block.below(), opposite: "above" },
+            { dir: "north", adjacent: block.north(), opposite: "south" },
+            { dir: "south", adjacent: block.south(), opposite: "north" },
+            { dir: "east", adjacent: block.west(), opposite: "east" },    // 東西逆
+            { dir: "west", adjacent: block.east(), opposite: "west" }     // 東西逆
+        ];
+        
+        let hasChanges = false;
+        
+        // 各方向の状態を計算
+        for (const { dir, adjacent, opposite } of directions) {
+            const connected = this.canConnectToDirection(block, adjacent, opposite);
+            const stateName = `magisystem:${dir}`;
+            
+            let newValue = "none";
+            if (connected) {
+                // 隣接ブロックが輸送ブロックかそれ以外かを判定
+                if (adjacent && adjacent.hasTag(this.blockTag)) {
+                    newValue = this.transporterType;
+                } else if (adjacent) {
+                    newValue = "block";
+                }
+            }
+            
+            newStates[stateName] = newValue;
+            if (currentStates[stateName] !== newValue) {
+                hasChanges = true;
+                Logger.debug(`${dir}: ${currentStates[stateName]} -> ${newValue}`, this.systemName);
+            }
+        }
+        
+        // 変更がある場合のみPermutationを更新
+        if (hasChanges) {
+            ErrorHandler.safeTry(() => {
+                // 全ての状態を含む新しいオブジェクトを作成
+                const allStates = { ...currentStates, ...newStates };
+                const newPermutation = BlockPermutation.resolve(block.typeId, allStates);
+                block.setPermutation(newPermutation);
+                Logger.debug(`全方向の接続状態を更新: ${block.typeId}`, this.systemName);
+            }, `${this.systemName}.updateDirectionStates`);
+        }
     }
 
     /**
@@ -179,8 +221,22 @@ export class BaseTransportSystem {
                 }
                 
                 if (currentStates[stateName] !== newValue) {
+                    Logger.debug(`接続状態変更 ${block.typeId} ${direction}: ${currentStates[stateName]} -> ${newValue}`, this.systemName);
                     currentStates[stateName] = newValue;
-                    block.setPermutation(BlockPermutation.resolve(block.typeId, currentStates));
+                    
+                    try {
+                        // BlockPermutationを作成して設定
+                        const newPermutation = BlockPermutation.resolve(block.typeId, currentStates);
+                        block.setPermutation(newPermutation);
+                        
+                        // 変更が反映されたか確認
+                        const updatedStates = block.permutation.getAllStates();
+                        if (updatedStates[stateName] !== newValue) {
+                            Logger.warn(`状態更新失敗: ${stateName} は ${newValue} に設定されませんでした`, this.systemName);
+                        }
+                    } catch (error) {
+                        Logger.error(`Permutation設定エラー: ${error}`, this.systemName);
+                    }
                 }
             }
         }, `${this.systemName}.setDirectionState[${direction}]`);

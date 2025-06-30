@@ -111,6 +111,13 @@ export class ItemPipeSystem extends BaseTransportSystem {
      * @returns {boolean}
      */
     hasInventory(block) {
+        // インベントリコンポーネントを持つかチェック
+        const inventory = block.getComponent("minecraft:inventory");
+        if (inventory?.container) {
+            return true;
+        }
+        
+        // 既知のインベントリブロックリストをチェック
         return this.inventoryBlocks.has(block.typeId) || 
                ItemPipeSystem.canConnectToInventoryBlock(block);
     }
