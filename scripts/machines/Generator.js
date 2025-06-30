@@ -49,7 +49,12 @@ export class Generator extends BaseMachine {
      * 発電機の情報を取得（親クラスのgetMachineInfoメソッドのエイリアス）
      */
     getGeneratorInfo(block) {
-        return this.getMachineInfo(block);
+        const info = this.getMachineInfo(block);
+        if (info && block) {
+            // 位置情報を追加
+            info.location = block.location;
+        }
+        return info;
     }
 
     /**
@@ -95,8 +100,8 @@ export class Generator extends BaseMachine {
         // 常に稼働状態
         this.updateVisualState(block, true);
         
-        // パーティクルエフェクト
-        ParticleEffectManager.spawnGeneratorEffect(block, "test");
+        // パーティクルエフェクト（無効化）
+        // ParticleEffectManager.spawnGeneratorEffect(block, "test");
     }
 
     /**
@@ -117,18 +122,19 @@ export class Generator extends BaseMachine {
             // 視覚効果の更新
             this.updateVisualState(block, true);
             
-            // 燃料アイテムの表示を更新
-            this.updateFuelDisplay(block, data);
+            // 燃焼進行状況をブロックステートに反映
+            this.updateBurnProgressState(block, data);
             
-            // パーティクルエフェクト
-            ParticleEffectManager.spawnGeneratorEffect(block, "normal");
+            // パーティクルエフェクト（無効化）
+            // ParticleEffectManager.spawnGeneratorEffect(block, "normal");
             
             // 燃料が尽きた場合
             if (data.burnTime <= 0) {
                 data.fuelItem = null;
                 data.maxBurnTime = 0;
                 this.machines.set(energySystem.getLocationKey(block.location), data);
-                this.removeFuelDisplay(block);
+                // 進行状況をリセット
+                this.updateBurnProgressState(block, { burnTime: 0, maxBurnTime: 0 });
             }
         } else {
             // 新しい燃料を取得
@@ -144,13 +150,15 @@ export class Generator extends BaseMachine {
                     // 燃料を消費
                     this.consumeFuel(block);
                     
-                    // 燃料アイテムを表示
-                    this.createFuelDisplay(block, newFuel.typeId);
+                    // 燃焼エフェクトの開始
+                    Logger.info(`燃料燃焼開始: ${newFuel.typeId} (${burnTime}tick)`, "Generator");
                 }
             }
             
             // アイドル状態
             this.updateVisualState(block, false);
+            // 進行状況を0に
+            this.updateBurnProgressState(block, { burnTime: 0, maxBurnTime: 0 });
         }
     }
 
@@ -279,92 +287,30 @@ export class Generator extends BaseMachine {
     }
 
     /**
-     * 燃料アイテムを表示
+     * 燃焼進行状況をブロックステートに反映
      * @private
      */
-    createFuelDisplay(block, itemTypeId) {
+    updateBurnProgressState(block, data) {
         return ErrorHandler.safeTry(() => {
-            // 既存の表示アイテムを削除
-            this.removeFuelDisplay(block);
-            
-            // アイテムの中心位置を計算（ブロックの中央、高さ8ピクセル）
-            const location = {
-                x: block.location.x + 0.5,
-                y: block.location.y + 0.5,
-                z: block.location.z + 0.5
-            };
-            
-            // アイテムエンティティを生成
-            const itemStack = new ItemStack(itemTypeId, 1);
-            const item = block.dimension.spawnItem(itemStack, location);
-            
-            // アイテムを拾えないようにする
-            item.addTag("generator_display");
-            item.addTag(`generator_${block.location.x}_${block.location.y}_${block.location.z}`);
-            
-            // アイテムを静止させる（重力を無効化できない場合は定期的に位置をリセット）
-            item.teleport(location);
-            
-            Logger.debug(`燃料アイテム表示: ${itemTypeId}`, "Generator");
-        }, "Generator.createFuelDisplay");
-    }
-
-    /**
-     * 燃料アイテムの表示を更新
-     * @private
-     */
-    updateFuelDisplay(block, data) {
-        return ErrorHandler.safeTry(() => {
-            const tag = `generator_${block.location.x}_${block.location.y}_${block.location.z}`;
-            const entities = block.dimension.getEntities({
-                tags: [tag],
-                type: "minecraft:item",
-                location: block.location,
-                maxDistance: 2
-            });
-            
-            // アイテムの位置を固定
-            const location = {
-                x: block.location.x + 0.5,
-                y: block.location.y + 0.5,
-                z: block.location.z + 0.5
-            };
-            
-            for (const entity of entities) {
-                entity.teleport(location);
-                
-                // 燃焼の進行度に応じて回転させる
-                const rotationSpeed = 2; // 度/tick
-                const currentRotation = entity.getRotation();
-                entity.setRotation({
-                    x: currentRotation.x,
-                    y: (currentRotation.y + rotationSpeed) % 360
-                });
-            }
-        }, "Generator.updateFuelDisplay");
-    }
-
-    /**
-     * 燃料アイテムの表示を削除
-     * @private
-     */
-    removeFuelDisplay(block) {
-        return ErrorHandler.safeTry(() => {
-            const tag = `generator_${block.location.x}_${block.location.y}_${block.location.z}`;
-            const entities = block.dimension.getEntities({
-                tags: [tag],
-                type: "minecraft:item",
-                location: block.location,
-                maxDistance: 2
-            });
-            
-            for (const entity of entities) {
-                entity.kill();
+            if (!data || data.maxBurnTime <= 0) {
+                BlockUtils.setBlockState(block, "magisystem:burn_progress", 0);
+                return;
             }
             
-            Logger.debug("燃料アイテム表示を削除", "Generator");
-        }, "Generator.removeFuelDisplay");
+            // 進行状況を0-10の範囲に変換（逆順：満タンが10、空が0）
+            const progress = data.burnTime / data.maxBurnTime;
+            const progressState = Math.floor(progress * 10);
+            
+            // ブロックステートを更新
+            BlockUtils.setBlockState(block, "magisystem:burn_progress", progressState);
+        }, "Generator.updateBurnProgressState");
     }
+
+
+
+
+
+
 }
 
 // シングルトンインスタンスをエクスポート

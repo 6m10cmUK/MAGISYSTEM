@@ -64,6 +64,13 @@ export class TickEvents extends BaseEventHandler {
             "updateItemTransfer"
         );
 
+        // 発電機の表示エンティティを管理（必要に応じて更新頻度を調整）
+        this.registerInterval(
+            () => this.updateGeneratorDisplayItems(),
+            5, // 5tickごとに実行（パフォーマンス最適化）
+            "updateGeneratorDisplayItems"
+        );
+
         // デバッグ情報の更新（条件付き）
         if (this.hasDebugPlayers()) {
             this.registerInterval(
@@ -177,7 +184,7 @@ export class TickEvents extends BaseEventHandler {
         const typeId = block.typeId;
 
         // 発電機の更新
-        if (typeId === Constants.BLOCK_TYPES.GENERATOR) {
+        if (typeId === Constants.BLOCK_TYPES.GENERATOR || typeId === Constants.BLOCK_TYPES.THERMAL_GENERATOR) {
             generator.updateGenerator(block);
         }
         // クリエイティブ発電機の更新
@@ -223,6 +230,50 @@ export class TickEvents extends BaseEventHandler {
             itemNetwork.update();
         } catch (error) {
             ErrorHandler.handleError(error, "TickEvents.updateItemTransfer");
+        }
+    }
+
+    /**
+     * 発電機の表示アイテムを固定位置に維持
+     */
+    updateGeneratorDisplayItems() {
+        try {
+            for (const dimensionId of this.dimensions) {
+                const dimension = world.getDimension(dimensionId);
+                if (!dimension) continue;
+
+                // generator_displayタグを持つ表示エンティティを取得
+                const displayItems = dimension.getEntities({
+                    tags: ["generator_display"],
+                    type: "magisystem:generator_display"
+                });
+
+                for (const item of displayItems) {
+                    // タグから元の位置を取得
+                    const posTag = item.getTags().find(tag => tag.startsWith("generator_"));
+                    if (!posTag) continue;
+
+                    const parts = posTag.split("_");
+                    if (parts.length === 4) {
+                        const x = parseFloat(parts[1]);
+                        const y = parseFloat(parts[2]);
+                        const z = parseFloat(parts[3]);
+
+                        // 正しい位置にテレポート
+                        const targetLocation = {
+                            x: x + 0.5,
+                            y: y + 0.5,
+                            z: z + 0.5
+                        };
+
+                        // 速度をクリアして位置を固定
+                        item.clearVelocity();
+                        item.teleport(targetLocation);
+                    }
+                }
+            }
+        } catch (error) {
+            ErrorHandler.handleError(error, "TickEvents.updateGeneratorDisplayItems");
         }
     }
 

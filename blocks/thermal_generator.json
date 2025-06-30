@@ -1,5 +1,5 @@
 {
-  "format_version": "1.20.80",
+  "format_version": "1.21.50",
   "minecraft:block": {
     "description": {
       "identifier": "magisystem:thermal_generator",
@@ -7,7 +7,13 @@
         "category": "equipment"
       },
       "states": {
-        "magisystem:active": [0, 1]
+        "magisystem:active": [0, 1],
+        "magisystem:burn_progress": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+      },
+      "traits": {
+        "minecraft:placement_direction": {
+          "enabled_states": ["minecraft:cardinal_direction"]
+        }
       }
     },
     "components": {
@@ -22,15 +28,11 @@
       "minecraft:geometry": "minecraft:geometry.full_block",
       "minecraft:material_instances": {
         "*": {
-          "texture": "thermal_generator_side",
+          "texture": "thermal_generator",
           "render_method": "opaque"
         },
-        "up": {
-          "texture": "thermal_generator_top",
-          "render_method": "opaque"
-        },
-        "down": {
-          "texture": "thermal_generator_bottom",
+        "north": {
+          "texture": "thermal_generator_0",
           "render_method": "opaque"
         }
       },
@@ -56,9 +58,191 @@
     },
     "permutations": [
       {
+        "condition": "q.block_state('minecraft:cardinal_direction') == 'north'",
+        "components": {
+          "minecraft:transformation": {
+            "rotation": [0, 180, 0]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('minecraft:cardinal_direction') == 'south'",
+        "components": {
+          "minecraft:transformation": {
+            "rotation": [0, 0, 0]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('minecraft:cardinal_direction') == 'west'",
+        "components": {
+          "minecraft:transformation": {
+            "rotation": [0, 270, 0]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('minecraft:cardinal_direction') == 'east'",
+        "components": {
+          "minecraft:transformation": {
+            "rotation": [0, 90, 0]
+          }
+        }
+      },
+      {
         "condition": "q.block_state('magisystem:active') == 1",
         "components": {
           "minecraft:light_emission": 7
+        }
+      },
+      {
+        "condition": "q.block_state('magisystem:burn_progress') == 1",
+        "components": {
+          "minecraft:material_instances": {
+            "*": {
+              "texture": "thermal_generator",
+              "render_method": "opaque"
+            },
+            "north": {
+              "texture": "thermal_generator_1",
+              "render_method": "opaque"
+            }
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('magisystem:burn_progress') == 2",
+        "components": {
+          "minecraft:material_instances": {
+            "*": {
+              "texture": "thermal_generator",
+              "render_method": "opaque"
+            },
+            "north": {
+              "texture": "thermal_generator_2",
+              "render_method": "opaque"
+            }
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('magisystem:burn_progress') == 3",
+        "components": {
+          "minecraft:material_instances": {
+            "*": {
+              "texture": "thermal_generator",
+              "render_method": "opaque"
+            },
+            "north": {
+              "texture": "thermal_generator_3",
+              "render_method": "opaque"
+            }
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('magisystem:burn_progress') == 4",
+        "components": {
+          "minecraft:material_instances": {
+            "*": {
+              "texture": "thermal_generator",
+              "render_method": "opaque"
+            },
+            "north": {
+              "texture": "thermal_generator_4",
+              "render_method": "opaque"
+            }
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('magisystem:burn_progress') == 5",
+        "components": {
+          "minecraft:material_instances": {
+            "*": {
+              "texture": "thermal_generator",
+              "render_method": "opaque"
+            },
+            "north": {
+              "texture": "thermal_generator_5",
+              "render_method": "opaque"
+            }
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('magisystem:burn_progress') == 6",
+        "components": {
+          "minecraft:material_instances": {
+            "*": {
+              "texture": "thermal_generator",
+              "render_method": "opaque"
+            },
+            "north": {
+              "texture": "thermal_generator_6",
+              "render_method": "opaque"
+            }
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('magisystem:burn_progress') == 7",
+        "components": {
+          "minecraft:material_instances": {
+            "*": {
+              "texture": "thermal_generator",
+              "render_method": "opaque"
+            },
+            "north": {
+              "texture": "thermal_generator_7",
+              "render_method": "opaque"
+            }
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('magisystem:burn_progress') == 8",
+        "components": {
+          "minecraft:material_instances": {
+            "*": {
+              "texture": "thermal_generator",
+              "render_method": "opaque"
+            },
+            "north": {
+              "texture": "thermal_generator_8",
+              "render_method": "opaque"
+            }
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('magisystem:burn_progress') == 9",
+        "components": {
+          "minecraft:material_instances": {
+            "*": {
+              "texture": "thermal_generator",
+              "render_method": "opaque"
+            },
+            "north": {
+              "texture": "thermal_generator_9",
+              "render_method": "opaque"
+            }
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('magisystem:burn_progress') == 10",
+        "components": {
+          "minecraft:material_instances": {
+            "*": {
+              "texture": "thermal_generator",
+              "render_method": "opaque"
+            },
+            "north": {
+              "texture": "thermal_generator_10",
+              "render_method": "opaque"
+            }
+          }
         }
       }
     ]

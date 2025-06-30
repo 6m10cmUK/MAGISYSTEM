@@ -1,12 +1,14 @@
 import { world, system } from "@minecraft/server";
 import { blockEvents } from "./events/BlockEvents.js";
 import { tickEvents } from "./events/TickEvents.js";
+import { itemPickupEvents } from "./events/ItemPickupEvents.js";
 import { Wrench } from "./tools/Wrench.js";
 import { generator } from "./machines/Generator.js";
 import { Constants } from "./core/Constants.js";
 import { ErrorHandler } from "./core/ErrorHandler.js";
 import { Logger } from "./core/Logger.js";
 import { energySystem } from "./energy/EnergySystem.js";
+// import { burnProgressDisplay } from "./ui/BurnProgressDisplay.js";
 
 // 初期化
 Logger.info("工業MODを初期化中...", "Main");
@@ -18,6 +20,7 @@ class MagisystemMain {
             // イベントの登録
             blockEvents.register();
             tickEvents.register();
+            itemPickupEvents.register();
             Wrench.register();
             
             // アイテム拾いの防止
@@ -31,6 +34,9 @@ class MagisystemMain {
             
             // エラーハンドリング
             this.registerErrorHandling();
+            
+            // 燃焼進行状況表示システムは削除
+            // burnProgressDisplay.initialize();
             
             Logger.info("すべてのシステムが正常に読み込まれました！", "Main");
         } catch (error) {

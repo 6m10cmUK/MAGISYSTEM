@@ -24,6 +24,7 @@ export class BlockEvents extends BaseEventHandler {
         // ブロックタイプのマッピング
         this.blockHandlers = new Map([
             [Constants.BLOCK_TYPES.GENERATOR, this.handleGeneratorPlace.bind(this)],
+            [Constants.BLOCK_TYPES.THERMAL_GENERATOR, this.handleGeneratorPlace.bind(this)],
             [Constants.BLOCK_TYPES.CREATIVE_GENERATOR, this.handleCreativeGeneratorPlace.bind(this)],
             [Constants.BLOCK_TYPES.CABLE, this.handleCablePlace.bind(this)],
             [Constants.BLOCK_TYPES.CABLE_INPUT, this.handleCablePlace.bind(this)],
@@ -140,6 +141,7 @@ export class BlockEvents extends BaseEventHandler {
     // ========== ブロック配置ハンドラー ==========
 
     handleGeneratorPlace(block, player) {
+        Logger.info(`発電機を配置: ${block.typeId}`, this.name);
         this.handleMachinePlace(block, player, generator, "発電機");
     }
 
@@ -203,17 +205,16 @@ export class BlockEvents extends BaseEventHandler {
     handleEnergyBlockBreak(typeId, location, dimension, brokenPermutation) {
         // 発電機の場合
         if (typeId === Constants.BLOCK_TYPES.GENERATOR || typeId === Constants.BLOCK_TYPES.THERMAL_GENERATOR) {
-            // 表示アイテムを削除
+            // 表示エンティティを削除（すべてのタイプ）
             const tag = `generator_${location.x}_${location.y}_${location.z}`;
             const entities = dimension.getEntities({
                 tags: [tag],
-                type: "minecraft:item",
                 location: location,
                 maxDistance: 2
             });
             
             for (const entity of entities) {
-                entity.kill();
+                entity.remove();
             }
             
             generator.unregisterGenerator(location, dimension);
