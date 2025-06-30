@@ -3,7 +3,7 @@
   "header": {
     "description": "工業化MOD - マインクラフト統合版",
     "name": "MAGISYSTEM",
-    "uuid": "a3f7e9c5-8b2d-4f1a-9e6c-2d8a3b5c7e9f",
+    "uuid": "4bae6ddc-1f7f-4d5f-b7a1-7bb0e9e17b7a",
     "version": [1, 0, 0],
     "min_engine_version": [1, 21, 59]
   },
@@ -33,7 +33,7 @@
       "version": "1.3.0"
     },
     {
-      "uuid": "c5f8e9d6-7b3e-4f2a-9e7c-4d9a5b6c8e2f",
+      "uuid": "a7f7b2e3-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
       "version": [1, 0, 0]
     }
   ],

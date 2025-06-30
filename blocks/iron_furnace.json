@@ -19,7 +19,19 @@
       "minecraft:geometry": "minecraft:geometry.full_block",
       "minecraft:material_instances": {
         "*": {
-          "texture": "iron_block",
+          "texture": "iron_furnace_side",
+          "render_method": "opaque"
+        },
+        "up": {
+          "texture": "iron_furnace_top",
+          "render_method": "opaque"
+        },
+        "down": {
+          "texture": "iron_furnace_bottom",
+          "render_method": "opaque"
+        },
+        "north": {
+          "texture": "iron_furnace_front",
           "render_method": "opaque"
         }
       },

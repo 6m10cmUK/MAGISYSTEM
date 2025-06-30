@@ -20,6 +20,9 @@ class MagisystemMain {
             tickEvents.register();
             Wrench.register();
             
+            // アイテム拾いの防止
+            this.registerItemPickupPrevention();
+            
             // ワールド初期化イベント
             this.registerWorldInitialize();
             
@@ -222,6 +225,37 @@ class MagisystemMain {
         
         helpMessages.forEach(msg => player.sendMessage(msg));
     }
+    
+    static registerItemPickupPrevention() {
+        // アイテムが拾われる前のイベント
+        world.beforeEvents.playerInteractWithEntity.subscribe((event) => {
+            const entity = event.target;
+            
+            // generator_displayタグを持つアイテムは拾えない
+            if (entity.typeId === "minecraft:item" && entity.hasTag("generator_display")) {
+                event.cancel = true;
+            }
+        });
+        
+        // エンティティスポーン時にアイテムの設定
+        world.afterEvents.entitySpawn.subscribe((event) => {
+            const entity = event.entity;
+            
+            // generator_displayタグを持つアイテムの物理を無効化
+            if (entity.typeId === "minecraft:item" && entity.hasTag("generator_display")) {
+                try {
+                    // 重力を無効化（可能な場合）
+                    const physics = entity.getComponent("minecraft:physics");
+                    if (physics) {
+                        physics.isAffectedByGravity = false;
+                    }
+                } catch (error) {
+                    // 物理コンポーネントが利用できない場合は無視
+                }
+            }
+        });
+    }
+    
     static registerErrorHandling() {
         system.afterEvents.scriptEventReceive.subscribe((event) => {
             if (event.id === "magisystem:error") {

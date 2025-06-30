@@ -22,7 +22,15 @@
       "minecraft:geometry": "minecraft:geometry.full_block",
       "minecraft:material_instances": {
         "*": {
-          "texture": "iron_block",
+          "texture": "thermal_generator_side",
+          "render_method": "opaque"
+        },
+        "up": {
+          "texture": "thermal_generator_top",
+          "render_method": "opaque"
+        },
+        "down": {
+          "texture": "thermal_generator_bottom",
           "render_method": "opaque"
         }
       },

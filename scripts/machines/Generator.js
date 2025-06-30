@@ -117,6 +117,9 @@ export class Generator extends BaseMachine {
             // 視覚効果の更新
             this.updateVisualState(block, true);
             
+            // 燃料アイテムの表示を更新
+            this.updateFuelDisplay(block, data);
+            
             // パーティクルエフェクト
             ParticleEffectManager.spawnGeneratorEffect(block, "normal");
             
@@ -125,6 +128,7 @@ export class Generator extends BaseMachine {
                 data.fuelItem = null;
                 data.maxBurnTime = 0;
                 this.machines.set(energySystem.getLocationKey(block.location), data);
+                this.removeFuelDisplay(block);
             }
         } else {
             // 新しい燃料を取得
@@ -139,6 +143,9 @@ export class Generator extends BaseMachine {
                     
                     // 燃料を消費
                     this.consumeFuel(block);
+                    
+                    // 燃料アイテムを表示
+                    this.createFuelDisplay(block, newFuel.typeId);
                 }
             }
             
@@ -259,6 +266,104 @@ export class Generator extends BaseMachine {
     isActive(block) {
         const data = this.getMachineInfo(block);
         return data && data.burnTime > 0;
+    }
+
+    /**
+     * 視覚的な状態を更新
+     * @private
+     */
+    updateVisualState(block, isActive) {
+        return ErrorHandler.safeTry(() => {
+            BlockUtils.setBlockState(block, "magisystem:active", isActive ? 1 : 0);
+        }, "Generator.updateVisualState");
+    }
+
+    /**
+     * 燃料アイテムを表示
+     * @private
+     */
+    createFuelDisplay(block, itemTypeId) {
+        return ErrorHandler.safeTry(() => {
+            // 既存の表示アイテムを削除
+            this.removeFuelDisplay(block);
+            
+            // アイテムの中心位置を計算（ブロックの中央、高さ8ピクセル）
+            const location = {
+                x: block.location.x + 0.5,
+                y: block.location.y + 0.5,
+                z: block.location.z + 0.5
+            };
+            
+            // アイテムエンティティを生成
+            const itemStack = new ItemStack(itemTypeId, 1);
+            const item = block.dimension.spawnItem(itemStack, location);
+            
+            // アイテムを拾えないようにする
+            item.addTag("generator_display");
+            item.addTag(`generator_${block.location.x}_${block.location.y}_${block.location.z}`);
+            
+            // アイテムを静止させる（重力を無効化できない場合は定期的に位置をリセット）
+            item.teleport(location);
+            
+            Logger.debug(`燃料アイテム表示: ${itemTypeId}`, "Generator");
+        }, "Generator.createFuelDisplay");
+    }
+
+    /**
+     * 燃料アイテムの表示を更新
+     * @private
+     */
+    updateFuelDisplay(block, data) {
+        return ErrorHandler.safeTry(() => {
+            const tag = `generator_${block.location.x}_${block.location.y}_${block.location.z}`;
+            const entities = block.dimension.getEntities({
+                tags: [tag],
+                type: "minecraft:item",
+                location: block.location,
+                maxDistance: 2
+            });
+            
+            // アイテムの位置を固定
+            const location = {
+                x: block.location.x + 0.5,
+                y: block.location.y + 0.5,
+                z: block.location.z + 0.5
+            };
+            
+            for (const entity of entities) {
+                entity.teleport(location);
+                
+                // 燃焼の進行度に応じて回転させる
+                const rotationSpeed = 2; // 度/tick
+                const currentRotation = entity.getRotation();
+                entity.setRotation({
+                    x: currentRotation.x,
+                    y: (currentRotation.y + rotationSpeed) % 360
+                });
+            }
+        }, "Generator.updateFuelDisplay");
+    }
+
+    /**
+     * 燃料アイテムの表示を削除
+     * @private
+     */
+    removeFuelDisplay(block) {
+        return ErrorHandler.safeTry(() => {
+            const tag = `generator_${block.location.x}_${block.location.y}_${block.location.z}`;
+            const entities = block.dimension.getEntities({
+                tags: [tag],
+                type: "minecraft:item",
+                location: block.location,
+                maxDistance: 2
+            });
+            
+            for (const entity of entities) {
+                entity.kill();
+            }
+            
+            Logger.debug("燃料アイテム表示を削除", "Generator");
+        }, "Generator.removeFuelDisplay");
     }
 }
 
