@@ -5,6 +5,7 @@
 
 import { ItemStack } from "@minecraft/server";
 import { Logger } from "../core/Logger.js";
+import { generator } from "../machines/Generator.js";
 
 export class SimpleItemTransport {
     /**
@@ -15,6 +16,11 @@ export class SimpleItemTransport {
      */
     static transferItems(sourceBlock, targetBlock) {
         try {
+            // 熱発電機への輸送の場合
+            if (targetBlock.typeId === "magisystem:thermal_generator") {
+                return this.transferToThermalGenerator(sourceBlock, targetBlock);
+            }
+            
             // インベントリコンポーネントを取得
             const sourceInv = sourceBlock.getComponent("minecraft:inventory");
             const targetInv = targetBlock.getComponent("minecraft:inventory");
@@ -172,10 +178,15 @@ export class SimpleItemTransport {
                     for (const target of inputAdjacents) {
                         if (!target) continue;
                         
+                        // 通常のインベントリチェック
                         const inv = target.getComponent("minecraft:inventory");
                         if (inv?.container && target.typeId !== "magisystem:pipe" && 
                             target.typeId !== "magisystem:pipe_input" && 
                             target.typeId !== "magisystem:pipe_output") {
+                            destinations.push(target);
+                        }
+                        // 熱発電機の場合も輸送先として追加
+                        else if (target.typeId === "magisystem:thermal_generator") {
                             destinations.push(target);
                         }
                     }
@@ -185,5 +196,59 @@ export class SimpleItemTransport {
         
         Logger.debug(`${destinations.length}個の輸送先を発見`, "SimpleItemTransport");
         return destinations;
+    }
+    
+    /**
+     * 熱発電機にアイテムを輸送
+     * @param {Block} sourceBlock - 輸送元ブロック
+     * @param {Block} targetBlock - 熱発電機ブロック
+     * @returns {number} 輸送したアイテム数
+     */
+    static transferToThermalGenerator(sourceBlock, targetBlock) {
+        try {
+            // 熱発電機が既に燃料を持っているか確認
+            const genInfo = generator.getGeneratorInfo(targetBlock);
+            if (genInfo && genInfo.burnTime > 0) {
+                // 既に燃焼中の場合は輸送しない
+                return 0;
+            }
+            
+            // 輸送元のインベントリを取得
+            const sourceInv = sourceBlock.getComponent("minecraft:inventory");
+            if (!sourceInv?.container) {
+                return 0;
+            }
+            
+            const sourceContainer = sourceInv.container;
+            
+            // 燃料となるアイテムを探す
+            for (let i = 0; i < sourceContainer.size; i++) {
+                const item = sourceContainer.getItem(i);
+                if (!item || item.amount <= 0) continue;
+                
+                // 燃料として使用可能かチェック
+                const burnTime = generator.getItemBurnTime(item.typeId);
+                if (burnTime > 0) {
+                    // 1個だけ取り出して熱発電機に供給
+                    if (generator.tryAddFuel(targetBlock, item.typeId)) {
+                        // 成功したら元のアイテムを減らす
+                        if (item.amount > 1) {
+                            item.amount -= 1;
+                            sourceContainer.setItem(i, item);
+                        } else {
+                            sourceContainer.setItem(i, undefined);
+                        }
+                        
+                        Logger.debug(`熱発電機に燃料を輸送: ${item.typeId}`, "SimpleItemTransport");
+                        return 1;
+                    }
+                }
+            }
+            
+            return 0;
+        } catch (error) {
+            Logger.error(`熱発電機への輸送エラー: ${error}`, "SimpleItemTransport");
+            return 0;
+        }
     }
 }

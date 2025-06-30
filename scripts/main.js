@@ -9,6 +9,8 @@ import { ErrorHandler } from "./core/ErrorHandler.js";
 import { Logger } from "./core/Logger.js";
 import { energySystem } from "./energy/EnergySystem.js";
 import { itemTransportManager } from "./items/ItemTransportManager.js";
+import { itemPipeSystem } from "./pipes/ItemPipeSystem.js";
+import { Utils } from "./core/Utils.js";
 // import { burnProgressDisplay } from "./ui/BurnProgressDisplay.js";
 
 // 初期化
@@ -60,6 +62,9 @@ class MagisystemMain {
                 Logger.info("エネルギーデータの復元を開始...", "Main");
                 this.restoreEnergyData();
             }, 20); // 1秒後
+            
+            // パイプの見た目を定期的に修正する処理を開始
+            this.startPipeVisualFix();
         });
     }
     
@@ -248,9 +253,21 @@ class MagisystemMain {
         player.sendMessage(`§7輸送元: §f${debugInfo.transportSources}個`);
         player.sendMessage(`§7経過Tick: §f${debugInfo.tickCounter}`);
         
+        // システムが停止している場合は再開
+        if (!debugInfo.isRunning) {
+            player.sendMessage("§cシステムが停止しています。再開します...");
+            itemTransportManager.start();
+        }
+        
         // 手動スキャンを実行
         player.sendMessage("§7手動スキャンを実行中...");
-        itemTransportManager.scanForExistingOutputPipes();
+        system.runTimeout(() => {
+            itemTransportManager.scanForExistingOutputPipes();
+        }, 1);
+        
+        // チャンクロード検出も手動実行
+        player.sendMessage("§7チャンクロード検出を実行中...");
+        itemTransportManager.checkNewlyLoadedChunks();
         
         // 周囲の出力パイプをスキャン
         const radius = 10;
@@ -334,6 +351,65 @@ class MagisystemMain {
                 });
             }
         });
+    }
+    
+    /**
+     * パイプの見た目を定期的に修正する処理
+     */
+    static startPipeVisualFix() {
+        let tickCounter = 0;
+        
+        system.runInterval(() => {
+            tickCounter++;
+            
+            // 5秒ごとに実行（100tick）
+            if (tickCounter % 100 !== 0) return;
+            
+            try {
+                // プレイヤーの周囲のパイプを更新
+                const players = world.getAllPlayers();
+                
+                for (const player of players) {
+                    const dimension = player.dimension;
+                    const center = player.location;
+                    const radius = 20; // 20ブロックの範囲
+                    
+                    let updatedCount = 0;
+                    
+                    // プレイヤーの周囲のパイプをチェック
+                    for (let x = -radius; x <= radius; x += 2) {
+                        for (let y = -radius; y <= radius; y += 2) {
+                            for (let z = -radius; z <= radius; z += 2) {
+                                const location = {
+                                    x: Math.floor(center.x) + x,
+                                    y: Math.floor(center.y) + y,
+                                    z: Math.floor(center.z) + z
+                                };
+                                
+                                const block = dimension.getBlock(location);
+                                if (block && itemPipeSystem.isTransportBlock(block)) {
+                                    // 見た目がおかしくなりやすいパイプを強制更新
+                                    const connectionInfo = itemPipeSystem.getConnectionInfo(block);
+                                    if (connectionInfo && connectionInfo.count > 0) {
+                                        // キャッシュをクリアして強制更新
+                                        itemPipeSystem.clearLocationCache(block.location);
+                                        itemPipeSystem.updatePattern(block, true);
+                                        updatedCount++;
+                                    }
+                                }
+                                
+                                // 処理負荷を抑えるため、一度に更新する数を制限
+                                if (updatedCount >= 10) {
+                                    return;
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                // エラーは無視（ログを汚さない）
+            }
+        }, 1); // 毎tick実行（内部でカウンタを使用）
     }
 }
 

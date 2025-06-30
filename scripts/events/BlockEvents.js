@@ -144,7 +144,8 @@ export class BlockEvents extends BaseEventHandler {
         
         // インベントリブロックの場合、隣接するパイプを更新
         const inventory = brokenBlockPermutation.getComponent?.("minecraft:inventory");
-        if (inventory || itemPipeSystem.inventoryBlocks.has(typeId)) {
+        if (inventory || itemPipeSystem.inventoryBlocks.has(typeId) || 
+            typeId === Constants.BLOCK_TYPES.THERMAL_GENERATOR) {
             this.updateAdjacentPipesAtLocation(location, dimension);
         }
     }
@@ -175,6 +176,11 @@ export class BlockEvents extends BaseEventHandler {
     handleGeneratorPlace(block, player) {
         Logger.info(`発電機を配置: ${block.typeId}`, this.name);
         this.handleMachinePlace(block, player, generator, "発電機");
+        
+        // 熱発電機の場合、隣接するパイプを更新
+        if (block.typeId === Constants.BLOCK_TYPES.THERMAL_GENERATOR) {
+            this.updateAdjacentPipes(block);
+        }
     }
 
     handleCreativeGeneratorPlace(block, player) {

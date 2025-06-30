@@ -35,13 +35,25 @@ export class Generator extends BaseMachine {
      * 発電機を登録（親クラスのregisterメソッドのエイリアス）
      */
     registerGenerator(block) {
-        return this.register(block);
+        // 親クラスのregisterメソッドを呼び出す
+        const result = this.register(block);
+        
+        // Dynamic Propertiesから燃焼状態を復元
+        this.restoreBurnData(block);
+        
+        return result;
     }
 
     /**
      * 発電機の登録を解除（親クラスのunregisterメソッドのエイリアス）
      */
     unregisterGenerator(location, dimension) {
+        // 燃焼状態をクリア
+        const block = dimension.getBlock(location);
+        if (block) {
+            this.clearBurnData(block);
+        }
+        
         return this.unregister(location, dimension);
     }
 
@@ -125,6 +137,12 @@ export class Generator extends BaseMachine {
             // 燃焼進行状況をブロックステートに反映
             this.updateBurnProgressState(block, data);
             
+            // 燃焼状態を保存（バランス重視）
+            // 40tickごと（2秒）、または残り1秒未満は毎tick保存
+            if (data.burnTime % 40 === 0 || data.burnTime <= 20) {
+                this.saveBurnData(block, data);
+            }
+            
             // パーティクルエフェクト（無効化）
             // ParticleEffectManager.spawnGeneratorEffect(block, "normal");
             
@@ -135,6 +153,8 @@ export class Generator extends BaseMachine {
                 this.machines.set(energySystem.getLocationKey(block.location), data);
                 // 進行状況をリセット
                 this.updateBurnProgressState(block, { burnTime: 0, maxBurnTime: 0 });
+                // 燃焼状態をクリア
+                this.clearBurnData(block);
             }
         } else {
             // 新しい燃料を取得
@@ -149,6 +169,9 @@ export class Generator extends BaseMachine {
                     
                     // 燃料を消費
                     this.consumeFuel(block);
+                    
+                    // 燃焼状態を保存
+                    this.saveBurnData(block, data);
                     
                     // 燃焼エフェクトの開始
                     Logger.info(`燃料燃焼開始: ${newFuel.typeId} (${burnTime}tick)`, "Generator");
@@ -306,11 +329,127 @@ export class Generator extends BaseMachine {
         }, "Generator.updateBurnProgressState");
     }
 
+    /**
+     * アイテムの燃焼時間を取得
+     * @param {string} itemTypeId - アイテムタイプID
+     * @returns {number} 燃焼時間（tick）、燃料でない場合は0
+     */
+    getItemBurnTime(itemTypeId) {
+        return FuelRegistry.getFuelValue(itemTypeId);
+    }
 
+    /**
+     * 発電機に燃料を追加しようとする
+     * @param {Block} block - 発電機ブロック
+     * @param {string} itemTypeId - 燃料アイテムのタイプID
+     * @returns {boolean} 追加成功したかどうか
+     */
+    tryAddFuel(block, itemTypeId) {
+        try {
+            // 発電機の情報を取得
+            const key = energySystem.getLocationKey(block.location);
+            let data = this.machines.get(key);
+            
+            if (!data) {
+                this.registerGenerator(block);
+                data = this.machines.get(key);
+            }
+            
+            // 既に燃料が燃焼中の場合は追加しない
+            if (data.burnTime > 0) {
+                Logger.debug(`発電機は既に燃焼中: 残り${data.burnTime}tick`, "Generator");
+                return false;
+            }
+            
+            // 燃料として使用可能かチェック
+            const burnTime = FuelRegistry.getFuelValue(itemTypeId);
+            if (burnTime <= 0) {
+                Logger.debug(`${itemTypeId}は燃料として使用できません`, "Generator");
+                return false;
+            }
+            
+            // 燃料を設定
+            data.burnTime = burnTime;
+            data.maxBurnTime = burnTime;
+            data.fuelItem = itemTypeId;
+            this.machines.set(key, data);
+            
+            // 燃焼状態を保存
+            this.saveBurnData(block, data);
+            
+            // 燃焼エフェクトの開始
+            Logger.info(`パイプから燃料追加: ${itemTypeId} (${burnTime}tick)`, "Generator");
+            BlockUtils.playSound(block, Constants.SOUNDS.FIZZ, { volume: 0.3 });
+            
+            return true;
+            
+        } catch (error) {
+            Logger.error(`燃料追加エラー: ${error}`, "Generator");
+            return false;
+        }
+    }
 
+    /**
+     * 燃焼状態をDynamic Propertiesに保存
+     * @private
+     */
+    saveBurnData(block, data) {
+        return ErrorHandler.safeTry(() => {
+            const key = energySystem.getLocationKey(block.location);
+            const burnData = {
+                burnTime: data.burnTime,
+                maxBurnTime: data.maxBurnTime,
+                fuelItem: data.fuelItem
+            };
+            
+            // Dynamic Propertyに保存
+            world.setDynamicProperty(`magisystem:burnData_${key}`, JSON.stringify(burnData));
+            
+            Logger.debug(`燃焼状態を保存: ${key} - ${JSON.stringify(burnData)}`, "Generator");
+        }, "Generator.saveBurnData");
+    }
 
+    /**
+     * Dynamic Propertiesから燃焼状態を復元
+     * @private
+     */
+    restoreBurnData(block) {
+        return ErrorHandler.safeTry(() => {
+            const key = energySystem.getLocationKey(block.location);
+            const storedData = world.getDynamicProperty(`magisystem:burnData_${key}`);
+            
+            if (storedData) {
+                const burnData = JSON.parse(storedData);
+                const machineData = this.machines.get(key);
+                
+                if (machineData && burnData.burnTime > 0) {
+                    machineData.burnTime = burnData.burnTime;
+                    machineData.maxBurnTime = burnData.maxBurnTime;
+                    machineData.fuelItem = burnData.fuelItem;
+                    this.machines.set(key, machineData);
+                    
+                    Logger.info(`燃焼状態を復元: ${burnData.fuelItem} (残り${burnData.burnTime}tick)`, "Generator");
+                    
+                    // 視覚状態も更新
+                    this.updateVisualState(block, true);
+                    this.updateBurnProgressState(block, burnData);
+                }
+            }
+        }, "Generator.restoreBurnData");
+    }
 
-
+    /**
+     * 燃焼状態をクリア
+     * @private
+     */
+    clearBurnData(block) {
+        return ErrorHandler.safeTry(() => {
+            const key = energySystem.getLocationKey(block.location);
+            world.setDynamicProperty(`magisystem:burnData_${key}`, undefined);
+            
+            Logger.debug(`燃焼状態をクリア: ${key}`, "Generator");
+        }, "Generator.clearBurnData");
+    }
 }
 
 // シングルトンインスタンスをエクスポート

@@ -32,7 +32,7 @@ export class BaseTransportSystem {
         // キャッシュ
         this.connectionCache = new Map();
         // アイテムパイプの場合はキャッシュを短くする
-        this.cacheTimeout = this.transporterType === "pipe" ? 1000 : Constants.PERFORMANCE.CACHE_DURATION;
+        this.cacheTimeout = this.transporterType === "pipe" ? 500 : Constants.PERFORMANCE.CACHE_DURATION;
         
         Logger.info(`${this.systemName}システムを初期化`, this.systemName);
     }
@@ -40,12 +40,18 @@ export class BaseTransportSystem {
     /**
      * 輸送ブロックのパターンを更新
      * @param {Block} block - 更新するブロック
+     * @param {boolean} forceUpdate - 強制的に更新するか
      */
-    updatePattern(block) {
+    updatePattern(block, forceUpdate = false) {
         if (!this.isTransportBlock(block)) return;
 
         ErrorHandler.safeTry(() => {
             Logger.startTimer(`${this.systemName}_updatePattern`);
+            
+            // 強制更新の場合はキャッシュをクリア
+            if (forceUpdate) {
+                this.clearLocationCache(block.location);
+            }
             
             // 6方向の接続状態を更新
             this.updateDirectionStates(block);
@@ -311,7 +317,9 @@ export class BaseTransportSystem {
 
         for (const adjacent of adjacents) {
             if (adjacent && this.isTransportBlock(adjacent)) {
-                this.updatePattern(adjacent);
+                // 隣接ブロックのキャッシュをクリアして強制更新
+                this.clearLocationCache(adjacent.location);
+                this.updatePattern(adjacent, true);
             }
         }
     }

@@ -43,6 +43,11 @@ export class ItemPipeSystem extends BaseTransportSystem {
                     return true;
                 }
                 
+                // 熱発電機のみ
+                if (block.typeId === "magisystem:thermal_generator") {
+                    return true;
+                }
+                
                 return false;
             }
         });
@@ -99,6 +104,11 @@ export class ItemPipeSystem extends BaseTransportSystem {
             (block.typeId.includes("machine") || 
              block.typeId.includes("storage") ||
              block.typeId.includes("processor"))) {
+            return true;
+        }
+
+        // 熱発電機のみ
+        if (block.typeId === "magisystem:thermal_generator") {
             return true;
         }
 
