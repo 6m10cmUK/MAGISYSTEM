@@ -21,7 +21,29 @@ export class ItemPipeSystem extends BaseTransportSystem {
                 "magisystem:pipe_output"
             ],
             canConnectToBlock: (block, oppositeDirection) => {
-                return ItemPipeSystem.canConnectToInventoryBlock(block);
+                // インベントリコンポーネントを持つブロックかチェック
+                const inventory = block.getComponent("minecraft:inventory");
+                if (inventory?.container) {
+                    return true;
+                }
+                
+                // タグベースの判定
+                if (block.hasTag("item_storage") ||
+                    block.hasTag("item_input") ||
+                    block.hasTag("item_output") ||
+                    block.hasTag("inventory")) {
+                    return true;
+                }
+                
+                // MAGISYSTEMの機械
+                if (block.typeId.startsWith("magisystem:") && 
+                    (block.typeId.includes("machine") || 
+                     block.typeId.includes("storage") ||
+                     block.typeId.includes("processor"))) {
+                    return true;
+                }
+                
+                return false;
             }
         });
 

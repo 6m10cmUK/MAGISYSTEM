@@ -121,6 +121,9 @@ export class BaseTransportSystem {
             // 対象ブロックとの接続（カスタム判定関数を使用）
             else {
                 result = this.canConnectToBlock(adjacent, oppositeDirection);
+                if (result) {
+                    Logger.debug(`${transportType}が${adjacentType}に接続可能`, this.systemName);
+                }
             }
         }
 
