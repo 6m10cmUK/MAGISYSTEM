@@ -5,7 +5,11 @@
       "identifier": "magisystem:cable_output"
     },
     "components": {
-      "minecraft:icon": "redstone",
+      "minecraft:icon": {
+        "textures": {
+          "default": "redstone_dust"
+        }
+      },
       "minecraft:display_name": {
         "value": "§cエネルギーケーブル（出力専用）"
       },

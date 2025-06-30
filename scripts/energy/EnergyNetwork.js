@@ -1,5 +1,6 @@
 import { world, system } from "@minecraft/server";
 import { energySystem } from "./EnergySystem.js";
+import { Logger } from "../core/Logger.js";
 
 export class EnergyNetwork {
     constructor() {
@@ -36,55 +37,68 @@ export class EnergyNetwork {
     }
 
     isEnergyConduit(block) {
-        return block?.typeId?.includes("cable") || block?.hasTag("energy_conduit");
+        return block?.typeId?.includes("cable") || 
+               block?.hasTag("energy_conduit") ||
+               block?.hasTag("mf_cable");
     }
 
     /**
      * エネルギー転送が可能かチェック（ケーブルの入出力制限を考慮）
      * @param {Block} fromBlock - エネルギー源のブロック  
      * @param {Block} toBlock - エネルギー先のブロック
+     * @param {Block} pathBlock - 経路上のブロック（ケーブル）
      * @returns {boolean} 転送可能か
      */
-    canTransferEnergy(fromBlock, toBlock) {
-        // fromBlockが出力専用ケーブルの場合、出力のみ可能
-        if (fromBlock?.hasTag("energy_output_only")) {
-            return true; // 出力専用なので出力は可能
+    canTransferEnergy(fromBlock, toBlock, pathBlock = null) {
+        // 経路上のブロックがある場合（ケーブル経由）
+        if (pathBlock) {
+            // 入力専用ケーブルはエネルギーを受け取れるが、出力できない
+            if (pathBlock.hasTag("energy_input_only")) {
+                return false; // 入力専用ケーブルからは出力できない
+            }
+            // 出力専用ケーブルはエネルギーを出力できるが、受け取れない
+            if (pathBlock.hasTag("energy_output_only")) {
+                return true; // 出力専用ケーブルからは出力可能
+            }
         }
         
-        // fromBlockが入力専用ケーブルの場合、出力不可
-        if (fromBlock?.hasTag("energy_input_only")) {
-            return false; // 入力専用なので出力は不可
+        // バッテリー同士の直接転送は禁止（ケーブル経由必須）
+        // デバッグ用に一時的に無効化
+        /*
+        if (fromBlock.hasTag("energy_storage") && toBlock.hasTag("energy_storage")) {
+            return false;
         }
+        */
         
-        // toBlockが入力専用ケーブルの場合、入力のみ可能
-        if (toBlock?.hasTag("energy_input_only")) {
-            return true; // 入力専用なので入力は可能
-        }
-        
-        // toBlockが出力専用ケーブルの場合、入力不可
-        if (toBlock?.hasTag("energy_output_only")) {
-            return false; // 出力専用なので入力は不可
-        }
-        
-        // 通常のケーブルまたはエネルギーブロック同士は双方向
+        // その他の場合は転送可能
         return true;
     }
 
 
     findConnectedNetwork(startBlock, excludeStart = false) {
         const network = new Map();
-        const queue = [startBlock];
+        const queue = [{block: startBlock, prevCable: null}];
         const visited = new Set();
+        const startKey = energySystem.getLocationKey(startBlock.location);
         
         while (queue.length > 0 && network.size < this.maxSearchDistance) {
-            const current = queue.shift();
+            const {block: current, prevCable} = queue.shift();
             const key = energySystem.getLocationKey(current.location);
             
             if (visited.has(key)) continue;
             visited.add(key);
             
+            // 入力・出力ケーブルの直接接続をチェック
+            if (this.isEnergyConduit(current) && prevCable && this.isEnergyConduit(prevCable)) {
+                // 両方が入力専用または出力専用の場合、接続不可
+                if ((current.hasTag("energy_input_only") && prevCable.hasTag("energy_output_only")) ||
+                    (current.hasTag("energy_output_only") && prevCable.hasTag("energy_input_only"))) {
+                    continue; // この経路は無効
+                }
+            }
+            
             // 開始ブロックを除外するオプション
-            if (!(excludeStart && current === startBlock)) {
+            if (!(excludeStart && key === startKey)) {
                 if (energySystem.isEnergyBlock(current) && !this.isEnergyConduit(current)) {
                     network.set(key, current);
                 }
@@ -93,10 +107,11 @@ export class EnergyNetwork {
             // ケーブルまたはエネルギーブロックの場合、隣接ブロックを探索
             if (this.isEnergyConduit(current) || energySystem.isEnergyBlock(current)) {
                 const adjacents = this.getAdjacentBlocks(current);
+                
                 for (const adj of adjacents) {
                     const adjKey = energySystem.getLocationKey(adj.block.location);
                     if (!visited.has(adjKey)) {
-                        queue.push(adj.block);
+                        queue.push({block: adj.block, prevCable: this.isEnergyConduit(current) ? current : null});
                     }
                 }
             }
@@ -110,13 +125,57 @@ export class EnergyNetwork {
             return 0;
         }
 
+        // エネルギー出力ブロック（発電機、バッテリー）の場合、出力ケーブルが隣接しているかチェック
+        if (energySystem.canOutput(sourceBlock)) {
+            const adjacents = this.getAdjacentBlocks(sourceBlock);
+            let hasOutputCable = false;
+            
+            for (const adj of adjacents) {
+                // 出力専用ケーブルのみが有効
+                if (adj.block.hasTag("energy_output_only")) {
+                    hasOutputCable = true;
+                    break;
+                }
+            }
+            
+            // 出力ケーブルがない場合は転送しない
+            if (!hasOutputCable) {
+                if (system.currentTick % 100 === 0) {
+                    Logger.debug(`${sourceBlock.typeId}: 出力ケーブルが見つかりません - 転送中止`, "EnergyNetwork");
+                }
+                return 0;
+            }
+        }
+
         // 接続されたネットワークを探索（ソースブロックは除外）
         const network = this.findConnectedNetwork(sourceBlock, true);
+        
+        // デバッグ: 転送試行時のネットワーク情報
+        if (energyAmount > 0 && system.currentTick % 20 === 0) {
+            Logger.debug(`転送開始: ${energyAmount} MF, ネットワークサイズ: ${network.size}, ソース: ${sourceBlock.typeId}`, "EnergyNetwork");
+        }
         
         // 入力可能なブロックのみをフィルタリング（ケーブルの制限も考慮）
         const receivers = [];
         for (const [key, block] of network) {
-            if (energySystem.canInput(block) && this.canTransferEnergy(sourceBlock, block)) {
+            if (energySystem.canInput(block)) {
+                // エネルギー入力ブロック（バッテリー、機械）の場合、入力ケーブルが隣接しているかチェック
+                const adjacents = this.getAdjacentBlocks(block);
+                let hasInputCable = false;
+                
+                for (const adj of adjacents) {
+                    // 入力専用ケーブルのみが有効
+                    if (adj.block.hasTag("energy_input_only")) {
+                        hasInputCable = true;
+                        break;
+                    }
+                }
+                
+                // 入力ケーブルがない場合はスキップ
+                if (!hasInputCable) {
+                    continue;
+                }
+                
                 const current = energySystem.getEnergy(block);
                 const max = energySystem.getMaxCapacity(block);
                 const needed = max - current;
@@ -134,15 +193,40 @@ export class EnergyNetwork {
         
         // エネルギーを分配
         let totalDistributed = 0;
-        const energyPerReceiver = Math.floor(energyAmount / receivers.length);
         
-        for (const receiver of receivers) {
-            const toTransfer = Math.min(energyPerReceiver, receiver.needed, energyAmount - totalDistributed);
+        // バッテリーからの送信で、レシーバーが1つだけの場合は全量送信
+        if (sourceBlock.hasTag("energy_storage") && receivers.length === 1) {
+            const receiver = receivers[0];
+            const toTransfer = Math.min(energyAmount, receiver.needed);
             if (toTransfer > 0) {
                 const transferred = energySystem.addEnergy(receiver.block, toTransfer);
                 totalDistributed += transferred;
-                
-                if (totalDistributed >= energyAmount) break;
+            }
+        } else {
+            // 複数のレシーバーがある場合は均等分配
+            const energyPerReceiver = Math.floor(energyAmount / receivers.length);
+            
+            for (const receiver of receivers) {
+                const toTransfer = Math.min(energyPerReceiver, receiver.needed, energyAmount - totalDistributed);
+                if (toTransfer > 0) {
+                    const transferred = energySystem.addEnergy(receiver.block, toTransfer);
+                    totalDistributed += transferred;
+                    
+                    if (totalDistributed >= energyAmount) break;
+                }
+            }
+            
+            // バッテリーの場合、残りのエネルギーも最初のレシーバーに送信
+            if (sourceBlock.hasTag("energy_storage") && totalDistributed < energyAmount && receivers.length > 0) {
+                const remainingEnergy = energyAmount - totalDistributed;
+                for (const receiver of receivers) {
+                    const additionalTransfer = Math.min(remainingEnergy, receiver.needed - energyPerReceiver);
+                    if (additionalTransfer > 0) {
+                        const transferred = energySystem.addEnergy(receiver.block, additionalTransfer);
+                        totalDistributed += transferred;
+                        break; // 最初の受信可能なレシーバーにのみ送信
+                    }
+                }
             }
         }
         
@@ -153,12 +237,19 @@ export class EnergyNetwork {
         // ブロックタイプによる優先度設定
         const priorities = {
             "magisystem:iron_furnace": 10,
-            "magisystem:battery_basic": 5,
-            "magisystem:battery_advanced": 4,
-            "magisystem:battery_ultimate": 3
+            "magisystem:battery_basic": 7,     // バッテリーの優先度を上げる
+            "magisystem:battery_advanced": 8,   // 高度なバッテリーほど優先度を高く
+            "magisystem:battery_ultimate": 9    // 究極バッテリーが最優先
         };
         
-        return priorities[block.typeId] || 1;
+        // 現在のエネルギー充電率も考慮（空に近いほど優先）
+        const current = energySystem.getEnergy(block);
+        const max = energySystem.getMaxCapacity(block);
+        const fillRate = current / max;
+        
+        // 基本優先度 - (充電率 * 2) で、空のバッテリーを優先
+        const basePriority = priorities[block.typeId] || 1;
+        return basePriority - (fillRate * 2);
     }
 
     transferEnergy(fromBlock, toBlock, maxAmount) {

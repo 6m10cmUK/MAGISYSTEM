@@ -59,7 +59,9 @@
         "size": [8, 8, 8]
       },
       "tag:mf_cable": {},
-      "tag:energy_conduit": {}
+      "tag:energy_conduit": {},
+      "tag:mf_input": {},
+      "tag:mf_output": {}
     },
     "permutations": [
       {

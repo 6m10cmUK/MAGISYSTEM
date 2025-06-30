@@ -1,21 +1,6 @@
 import { world, system } from '@minecraft/server';
-import { getBlockEnergy, setBlockEnergy } from './shared.js';
-
-const FUEL_VALUES = {
-    'minecraft:coal': 80,
-    'minecraft:coal_block': 720,
-    'minecraft:charcoal': 80,
-    'minecraft:blaze_rod': 120,
-    'minecraft:lava_bucket': 1000,
-    'minecraft:dried_kelp_block': 200,
-    'minecraft:bamboo': 5,
-    'minecraft:stick': 10,
-    'minecraft:wooden_sword': 20,
-    'minecraft:wooden_pickaxe': 20,
-    'minecraft:wooden_axe': 20,
-    'minecraft:wooden_shovel': 20,
-    'minecraft:wooden_hoe': 20
-};
+import { energySystem } from './energy/EnergySystem.js';
+import { FuelRegistry } from './core/FuelRegistry.js';
 
 // ホッパーの位置を記録
 const activeHoppers = new Set();
@@ -87,7 +72,7 @@ function checkHopperConnection(hopperBlock, dimension) {
 }
 
 function transferFuelFromHopper(hopperContainer, generatorBlock) {
-    const energyData = getBlockEnergy(generatorBlock.location);
+    const energyData = energySystem.getBlockEnergy(generatorBlock);
     
     // 燃料スロットに空きがあるかチェック（最大1600燃料値 = 石炭20個分）
     if (energyData.fuel >= 1600) return;
@@ -96,8 +81,9 @@ function transferFuelFromHopper(hopperContainer, generatorBlock) {
     for (let i = 0; i < hopperContainer.size; i++) {
         const item = hopperContainer.getItem(i);
         
-        if (item && FUEL_VALUES[item.typeId]) {
-            const fuelValue = FUEL_VALUES[item.typeId];
+        if (item && FuelRegistry.isFuel(item.typeId)) {
+            // FuelRegistryの値はtick単位なので、ホッパーシステムのスケールに変換（/20）
+            const fuelValue = Math.floor(FuelRegistry.getFuelValue(item.typeId) / 20);
             
             // 燃料を追加できるかチェック
             if (energyData.fuel + fuelValue <= 1600) {
@@ -111,7 +97,7 @@ function transferFuelFromHopper(hopperContainer, generatorBlock) {
                 
                 // 燃料を追加
                 energyData.fuel += fuelValue;
-                setBlockEnergy(generatorBlock.location, energyData);
+                energySystem.setBlockEnergy(generatorBlock, energyData);
                 
                 // エフェクト
                 const particleLocation = {
@@ -149,4 +135,4 @@ world.afterEvents.playerPlaceBlock.subscribe((event) => {
     }
 });
 
-export { FUEL_VALUES };
+// FuelRegistryを使用するため、FUEL_VALUESのエクスポートは削除

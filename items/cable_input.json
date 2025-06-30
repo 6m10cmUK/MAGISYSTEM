@@ -5,7 +5,11 @@
       "identifier": "magisystem:cable_input"
     },
     "components": {
-      "minecraft:icon": "emerald",
+      "minecraft:icon": {
+        "textures": {
+          "default": "emerald"
+        }
+      },
       "minecraft:display_name": {
         "value": "§aエネルギーケーブル（入力専用）"
       },

@@ -334,6 +334,14 @@ export class ItemNetwork {
     getLocationKey(location) {
         return `${location.x},${location.y},${location.z}`;
     }
+
+    /**
+     * アイテムネットワークの定期更新
+     */
+    update() {
+        // 現在は何もしない - 将来の実装用
+        // アイテムパイプシステムが必要に応じて個別に処理を行う
+    }
 }
 
 // シングルトンインスタンスをエクスポート

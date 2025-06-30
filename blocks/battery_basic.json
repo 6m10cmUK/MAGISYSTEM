@@ -31,7 +31,6 @@
       },
       "minecraft:map_color": "#AA0000",
       "minecraft:light_emission": 0,
-      "minecraft:loot": "loot_tables/blocks/battery_basic.json",
       "minecraft:placement_filter": {
         "conditions": [
           {

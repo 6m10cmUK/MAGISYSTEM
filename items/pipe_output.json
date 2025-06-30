@@ -5,7 +5,6 @@
       "identifier": "magisystem:pipe_output"
     },
     "components": {
-      "minecraft:icon": "coal",
       "minecraft:display_name": {
         "value": "§8アイテムパイプ（出力専用）"
       },

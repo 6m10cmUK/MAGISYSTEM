@@ -5,7 +5,6 @@
       "identifier": "magisystem:pipe"
     },
     "components": {
-      "minecraft:icon": "cobblestone",
       "minecraft:display_name": {
         "value": "§7アイテムパイプ（通常）"
       },

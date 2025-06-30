@@ -43,7 +43,9 @@
         ]
       },
       "tag:energy_generator": {},
-      "tag:creative_mode": {}
+      "tag:creative_mode": {},
+      "tag:mf_output": {},
+      "tag:energy_output": {}
     }
   }
 }
