@@ -124,6 +124,7 @@ export class EnergySystem {
         // ブロックタイプごとの最大容量を定義
         const capacities = {
             [Constants.BLOCK_TYPES.GENERATOR]: 4000,  // 内部バッファ (100秒分の発電量)
+            [Constants.BLOCK_TYPES.THERMAL_GENERATOR]: 4000,  // 熱発電機
             [Constants.BLOCK_TYPES.SOLAR_GENERATOR]: 10000,  // ソーラー発電機
             [Constants.BLOCK_TYPES.CREATIVE_GENERATOR]: 10000,  // クリエイティブ発電機（大容量バッファ）
             [Constants.BLOCK_TYPES.BATTERY]: 50000,
@@ -158,6 +159,7 @@ export class EnergySystem {
         // 出力可能なブロックタイプ
         const outputTypes = [
             Constants.BLOCK_TYPES.GENERATOR,
+            Constants.BLOCK_TYPES.THERMAL_GENERATOR,
             Constants.BLOCK_TYPES.CREATIVE_GENERATOR,
             Constants.BLOCK_TYPES.BATTERY_BASIC,
             Constants.BLOCK_TYPES.BATTERY_ADVANCED,

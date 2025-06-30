@@ -165,18 +165,34 @@ export class Generator extends BaseMachine {
     }
 
     /**
-     * インベントリから燃料を取得
+     * 上部のインベントリから燃料を取得
      * @private
      */
     getFuelFromInventory(block) {
         return ErrorHandler.safeTry(() => {
-            const inventory = block.getComponent("minecraft:inventory");
-            if (!inventory?.container) return null;
+            // 上部のブロックを取得
+            const aboveLocation = {
+                x: block.location.x,
+                y: block.location.y + 1,
+                z: block.location.z
+            };
+            const aboveBlock = block.dimension.getBlock(aboveLocation);
+            
+            if (!aboveBlock) return null;
+            
+            // 上部ブロックのインベントリを確認
+            const inventory = aboveBlock.getComponent("minecraft:inventory");
+            if (!inventory?.container) {
+                // チェストやホッパーなどのインベントリがない場合
+                Logger.debug(`上部ブロック ${aboveBlock.typeId} にインベントリがありません`, "Generator");
+                return null;
+            }
             
             const container = inventory.container;
             for (let i = 0; i < container.size; i++) {
                 const item = container.getItem(i);
                 if (item && FuelRegistry.isFuel(item.typeId)) {
+                    Logger.debug(`燃料発見: ${item.typeId} x${item.amount}`, "Generator");
                     return item;
                 }
             }
@@ -185,12 +201,22 @@ export class Generator extends BaseMachine {
     }
 
     /**
-     * 燃料を消費
+     * 上部のインベントリから燃料を消費
      * @private
      */
     consumeFuel(block) {
         return ErrorHandler.safeTry(() => {
-            const inventory = block.getComponent("minecraft:inventory");
+            // 上部のブロックを取得
+            const aboveLocation = {
+                x: block.location.x,
+                y: block.location.y + 1,
+                z: block.location.z
+            };
+            const aboveBlock = block.dimension.getBlock(aboveLocation);
+            
+            if (!aboveBlock) return false;
+            
+            const inventory = aboveBlock.getComponent("minecraft:inventory");
             if (!inventory?.container) return false;
             
             const container = inventory.container;
@@ -211,6 +237,7 @@ export class Generator extends BaseMachine {
                     }
                     
                     BlockUtils.playSound(block, Constants.SOUNDS.FIZZ, { volume: 0.3 });
+                    Logger.debug(`燃料消費: ${item.typeId}`, "Generator");
                     return true;
                 }
             }
