@@ -42,8 +42,15 @@ export class Battery extends BaseMachine {
         const capacity = this.capacities[block.typeId] || 10000;
         const transferRate = this.transferRates[block.typeId] || 100;
         
-        // エネルギーシステムに登録（Dynamic Propertyに保存）
-        energySystem.setEnergy(block, 0);
+        // 既存のエネルギーを確認（リロード後の復元）
+        const currentEnergy = energySystem.getEnergy(block);
+        
+        // エネルギーが0の場合のみ初期化（既存の値があれば保持）
+        if (currentEnergy === 0) {
+            energySystem.setEnergy(block, 0);
+        } else {
+            Logger.debug(`バッテリーエネルギー復元: ${currentEnergy} MF`, "Battery");
+        }
         
         return this.register(block, {
             typeId: block.typeId,

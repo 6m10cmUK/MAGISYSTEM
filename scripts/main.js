@@ -39,9 +39,41 @@ class MagisystemMain {
         world.afterEvents.worldInitialize.subscribe(() => {
             Logger.info("ワールドが正常に初期化されました！", "Main");
             
-            // エネルギーシステムは自動的に初期化される
-            // スコアボードの初期化はEnergySystemのコンストラクタで実行済み
+            // エネルギーシステムの初期化を確実に実行
+            energySystem.initializeScoreboard();
+            
+            // 少し遅延してからブロックの復元を試みる
+            system.runTimeout(() => {
+                Logger.info("エネルギーデータの復元を開始...", "Main");
+                this.restoreEnergyData();
+            }, 20); // 1秒後
         });
+    }
+    
+    static restoreEnergyData() {
+        try {
+            // Dynamic Propertyから保存されたエネルギーデータを探す
+            const properties = world.getDynamicPropertyIds();
+            let restoredCount = 0;
+            
+            for (const prop of properties) {
+                if (prop.startsWith("energy_") && prop.match(/^energy_-?\d+,-?\d+,-?\d+$/)) {
+                    const locationKey = prop.substring(7); // "energy_"を除去
+                    const energyValue = world.getDynamicProperty(prop);
+                    
+                    if (energyValue !== undefined && energyValue > 0) {
+                        Logger.debug(`エネルギー復元: ${locationKey} = ${energyValue} MF`, "Main");
+                        restoredCount++;
+                    }
+                }
+            }
+            
+            if (restoredCount > 0) {
+                Logger.info(`${restoredCount}個のブロックのエネルギーを復元しました`, "Main");
+            }
+        } catch (error) {
+            ErrorHandler.handleError(error, "MagisystemMain.restoreEnergyData");
+        }
     }
 
     static registerDebugCommands() {
@@ -78,6 +110,9 @@ class MagisystemMain {
                     break;
                 case "scoreboard":
                     this.checkScoreboard(player);
+                    break;
+                case "energy":
+                    this.checkEnergyData(player);
                     break;
                 case "loglevel":
                     this.setLogLevel(player, args[2]);
@@ -131,6 +166,31 @@ class MagisystemMain {
         }
     }
     
+    static checkEnergyData(player) {
+        try {
+            const properties = world.getDynamicPropertyIds();
+            let energyProps = 0;
+            let totalEnergy = 0;
+            
+            for (const prop of properties) {
+                if (prop.startsWith("energy_") && prop.match(/^energy_-?\d+,-?\d+,-?\d+$/)) {
+                    const energyValue = world.getDynamicProperty(prop);
+                    if (energyValue !== undefined && energyValue > 0) {
+                        energyProps++;
+                        totalEnergy += energyValue;
+                        const location = prop.substring(7);
+                        player.sendMessage(`§7${location}: ${energyValue} MF`);
+                    }
+                }
+            }
+            
+            player.sendMessage(`${Constants.UI.SUCCESS_COLOR}[MAGISYSTEM] Dynamic Propertyに保存されたエネルギー: ${energyProps}個`);
+            player.sendMessage(`§7合計エネルギー: ${totalEnergy} MF`);
+        } catch (error) {
+            player.sendMessage(`${Constants.UI.ERROR_COLOR}[MAGISYSTEM] エラー: ${error}`);
+        }
+    }
+    
     static setLogLevel(player, level) {
         const levels = {
             "debug": Constants.LOG_LEVELS.DEBUG,
@@ -153,6 +213,7 @@ class MagisystemMain {
             "§7!magisystem debug - デバッグモードの切り替え",
             "§7!magisystem test - 発電機の無限発電モード切り替え",
             "§7!magisystem scoreboard - スコアボードの状態確認",
+            "§7!magisystem energy - Dynamic Propertyのエネルギーデータ確認",
             "§7!magisystem loglevel <level> - ログレベルの設定",
             "§7!magisystem help - このヘルプを表示",
             "§7レンチで機械を右クリック - エネルギー情報を表示",

@@ -111,6 +111,7 @@ export class EnergySystem {
             
             // Dynamic Propertyから削除
             world.setDynamicProperty(key, undefined);
+            world.setDynamicProperty(`energy_${key}`, undefined);
             this.clearFuelData(location);
             
             return true;
