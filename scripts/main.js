@@ -1,12 +1,14 @@
 import { world, system } from "@minecraft/server";
 import { blockEvents } from "./events/BlockEvents.js";
 import { tickEvents } from "./events/TickEvents.js";
+import { itemPickupEvents } from "./events/ItemPickupEvents.js";
 import { Wrench } from "./tools/Wrench.js";
 import { generator } from "./machines/Generator.js";
 import { Constants } from "./core/Constants.js";
 import { ErrorHandler } from "./core/ErrorHandler.js";
 import { Logger } from "./core/Logger.js";
 import { energySystem } from "./energy/EnergySystem.js";
+// import { burnProgressDisplay } from "./ui/BurnProgressDisplay.js";
 
 // 初期化
 Logger.info("工業MODを初期化中...", "Main");
@@ -18,7 +20,11 @@ class MagisystemMain {
             // イベントの登録
             blockEvents.register();
             tickEvents.register();
+            itemPickupEvents.register();
             Wrench.register();
+            
+            // アイテム拾いの防止
+            this.registerItemPickupPrevention();
             
             // ワールド初期化イベント
             this.registerWorldInitialize();
@@ -28,6 +34,9 @@ class MagisystemMain {
             
             // エラーハンドリング
             this.registerErrorHandling();
+            
+            // 燃焼進行状況表示システムは削除
+            // burnProgressDisplay.initialize();
             
             Logger.info("すべてのシステムが正常に読み込まれました！", "Main");
         } catch (error) {
@@ -222,6 +231,37 @@ class MagisystemMain {
         
         helpMessages.forEach(msg => player.sendMessage(msg));
     }
+    
+    static registerItemPickupPrevention() {
+        // アイテムが拾われる前のイベント
+        world.beforeEvents.playerInteractWithEntity.subscribe((event) => {
+            const entity = event.target;
+            
+            // generator_displayタグを持つアイテムは拾えない
+            if (entity.typeId === "minecraft:item" && entity.hasTag("generator_display")) {
+                event.cancel = true;
+            }
+        });
+        
+        // エンティティスポーン時にアイテムの設定
+        world.afterEvents.entitySpawn.subscribe((event) => {
+            const entity = event.entity;
+            
+            // generator_displayタグを持つアイテムの物理を無効化
+            if (entity.typeId === "minecraft:item" && entity.hasTag("generator_display")) {
+                try {
+                    // 重力を無効化（可能な場合）
+                    const physics = entity.getComponent("minecraft:physics");
+                    if (physics) {
+                        physics.isAffectedByGravity = false;
+                    }
+                } catch (error) {
+                    // 物理コンポーネントが利用できない場合は無視
+                }
+            }
+        });
+    }
+    
     static registerErrorHandling() {
         system.afterEvents.scriptEventReceive.subscribe((event) => {
             if (event.id === "magisystem:error") {

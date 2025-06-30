@@ -30,18 +30,18 @@
         "identifier": "geometry.cable",
         "bone_visibility": {
           "center": "!q.block_state('magisystem:is_straight')",
-          "up": "q.block_state('magisystem:above') != 'none'",
-          "up_connector": "q.block_state('magisystem:above') == 'block'",
-          "down": "q.block_state('magisystem:below') != 'none'",
-          "down_connector": "q.block_state('magisystem:below') == 'block'",
-          "north": "q.block_state('magisystem:north') != 'none'",
-          "north_connector": "q.block_state('magisystem:north') == 'block'",
-          "south": "q.block_state('magisystem:south') != 'none'",
-          "south_connector": "q.block_state('magisystem:south') == 'block'",
-          "east": "q.block_state('magisystem:east') != 'none'",
-          "east_connector": "q.block_state('magisystem:east') == 'block'",
-          "west": "q.block_state('magisystem:west') != 'none'",
-          "west_connector": "q.block_state('magisystem:west') == 'block'"
+          "up": false,
+          "up_connector": false,
+          "down": false,
+          "down_connector": false,
+          "north": false,
+          "north_connector": false,
+          "south": false,
+          "south_connector": false,
+          "east": false,
+          "east_connector": false,
+          "west": false,
+          "west_connector": false
         }
       },
       "minecraft:material_instances": {
@@ -84,6 +84,144 @@
             }
           },
           "minecraft:light_emission": 3
+        }
+      },
+      {
+        "condition": "q.block_state('magisystem:above') != 'none'",
+        "components": {
+          "minecraft:geometry": {
+            "identifier": "geometry.cable",
+            "bone_visibility": {
+              "center": "!q.block_state('magisystem:is_straight')",
+              "up": true,
+              "up_connector": "q.block_state('magisystem:above') == 'block'",
+              "down": "q.block_state('magisystem:below') != 'none'",
+              "down_connector": "q.block_state('magisystem:below') == 'block'",
+              "north": "q.block_state('magisystem:north') != 'none'",
+              "north_connector": "q.block_state('magisystem:north') == 'block'",
+              "south": "q.block_state('magisystem:south') != 'none'",
+              "south_connector": "q.block_state('magisystem:south') == 'block'",
+              "east": "q.block_state('magisystem:east') != 'none'",
+              "east_connector": "q.block_state('magisystem:east') == 'block'",
+              "west": "q.block_state('magisystem:west') != 'none'",
+              "west_connector": "q.block_state('magisystem:west') == 'block'"
+            }
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('magisystem:below') != 'none'",
+        "components": {
+          "minecraft:geometry": {
+            "identifier": "geometry.cable",
+            "bone_visibility": {
+              "center": "!q.block_state('magisystem:is_straight')",
+              "up": "q.block_state('magisystem:above') != 'none'",
+              "up_connector": "q.block_state('magisystem:above') == 'block'",
+              "down": true,
+              "down_connector": "q.block_state('magisystem:below') == 'block'",
+              "north": "q.block_state('magisystem:north') != 'none'",
+              "north_connector": "q.block_state('magisystem:north') == 'block'",
+              "south": "q.block_state('magisystem:south') != 'none'",
+              "south_connector": "q.block_state('magisystem:south') == 'block'",
+              "east": "q.block_state('magisystem:east') != 'none'",
+              "east_connector": "q.block_state('magisystem:east') == 'block'",
+              "west": "q.block_state('magisystem:west') != 'none'",
+              "west_connector": "q.block_state('magisystem:west') == 'block'"
+            }
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('magisystem:north') != 'none'",
+        "components": {
+          "minecraft:geometry": {
+            "identifier": "geometry.cable",
+            "bone_visibility": {
+              "center": "!q.block_state('magisystem:is_straight')",
+              "up": "q.block_state('magisystem:above') != 'none'",
+              "up_connector": "q.block_state('magisystem:above') == 'block'",
+              "down": "q.block_state('magisystem:below') != 'none'",
+              "down_connector": "q.block_state('magisystem:below') == 'block'",
+              "north": true,
+              "north_connector": "q.block_state('magisystem:north') == 'block'",
+              "south": "q.block_state('magisystem:south') != 'none'",
+              "south_connector": "q.block_state('magisystem:south') == 'block'",
+              "east": "q.block_state('magisystem:east') != 'none'",
+              "east_connector": "q.block_state('magisystem:east') == 'block'",
+              "west": "q.block_state('magisystem:west') != 'none'",
+              "west_connector": "q.block_state('magisystem:west') == 'block'"
+            }
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('magisystem:south') != 'none'",
+        "components": {
+          "minecraft:geometry": {
+            "identifier": "geometry.cable",
+            "bone_visibility": {
+              "center": "!q.block_state('magisystem:is_straight')",
+              "up": "q.block_state('magisystem:above') != 'none'",
+              "up_connector": "q.block_state('magisystem:above') == 'block'",
+              "down": "q.block_state('magisystem:below') != 'none'",
+              "down_connector": "q.block_state('magisystem:below') == 'block'",
+              "north": "q.block_state('magisystem:north') != 'none'",
+              "north_connector": "q.block_state('magisystem:north') == 'block'",
+              "south": true,
+              "south_connector": "q.block_state('magisystem:south') == 'block'",
+              "east": "q.block_state('magisystem:east') != 'none'",
+              "east_connector": "q.block_state('magisystem:east') == 'block'",
+              "west": "q.block_state('magisystem:west') != 'none'",
+              "west_connector": "q.block_state('magisystem:west') == 'block'"
+            }
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('magisystem:east') != 'none'",
+        "components": {
+          "minecraft:geometry": {
+            "identifier": "geometry.cable",
+            "bone_visibility": {
+              "center": "!q.block_state('magisystem:is_straight')",
+              "up": "q.block_state('magisystem:above') != 'none'",
+              "up_connector": "q.block_state('magisystem:above') == 'block'",
+              "down": "q.block_state('magisystem:below') != 'none'",
+              "down_connector": "q.block_state('magisystem:below') == 'block'",
+              "north": "q.block_state('magisystem:north') != 'none'",
+              "north_connector": "q.block_state('magisystem:north') == 'block'",
+              "south": "q.block_state('magisystem:south') != 'none'",
+              "south_connector": "q.block_state('magisystem:south') == 'block'",
+              "east": true,
+              "east_connector": "q.block_state('magisystem:east') == 'block'",
+              "west": "q.block_state('magisystem:west') != 'none'",
+              "west_connector": "q.block_state('magisystem:west') == 'block'"
+            }
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('magisystem:west') != 'none'",
+        "components": {
+          "minecraft:geometry": {
+            "identifier": "geometry.cable",
+            "bone_visibility": {
+              "center": "!q.block_state('magisystem:is_straight')",
+              "up": "q.block_state('magisystem:above') != 'none'",
+              "up_connector": "q.block_state('magisystem:above') == 'block'",
+              "down": "q.block_state('magisystem:below') != 'none'",
+              "down_connector": "q.block_state('magisystem:below') == 'block'",
+              "north": "q.block_state('magisystem:north') != 'none'",
+              "north_connector": "q.block_state('magisystem:north') == 'block'",
+              "south": "q.block_state('magisystem:south') != 'none'",
+              "south_connector": "q.block_state('magisystem:south') == 'block'",
+              "east": "q.block_state('magisystem:east') != 'none'",
+              "east_connector": "q.block_state('magisystem:east') == 'block'",
+              "west": true,
+              "west_connector": "q.block_state('magisystem:west') == 'block'"
+            }
+          }
         }
       }
     ]

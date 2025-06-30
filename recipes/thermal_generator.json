@@ -2,7 +2,7 @@
   "format_version": "1.21.50",
   "minecraft:recipe_shaped": {
     "description": {
-      "identifier": "magisystem:generator"
+      "identifier": "magisystem:thermal_generator"
     },
     "tags": ["crafting_table"],
     "pattern": [
@@ -33,7 +33,7 @@
       }
     ],
     "result": {
-      "item": "magisystem:generator"
+      "item": "magisystem:thermal_generator"
     }
   }
 }

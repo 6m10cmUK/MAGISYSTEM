@@ -38,13 +38,14 @@ export class InfoGatherer {
         info.data.canInput = energySystem.canInput(block);
         info.data.canOutput = energySystem.canOutput(block);
 
-        // 発電機固有情報
-        if (typeId === Constants.BLOCK_TYPES.GENERATOR) {
+        // 発電機固有情報（通常発電機・熱発電機）
+        if (typeId === Constants.BLOCK_TYPES.GENERATOR || typeId === Constants.BLOCK_TYPES.THERMAL_GENERATOR) {
             const genInfo = generator.getGeneratorInfo(block);
             if (genInfo) {
-                info.data.isActive = genInfo.isActive;
+                info.data.isActive = genInfo.burnTime > 0;
                 info.data.generationRate = generator.generationRate;
                 info.data.burnTime = genInfo.burnTime;
+                info.data.maxBurnTime = genInfo.maxBurnTime;
                 info.data.fuelItem = genInfo.fuelItem;
             }
         }

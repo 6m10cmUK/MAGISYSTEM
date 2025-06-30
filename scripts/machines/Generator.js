@@ -49,7 +49,12 @@ export class Generator extends BaseMachine {
      * 発電機の情報を取得（親クラスのgetMachineInfoメソッドのエイリアス）
      */
     getGeneratorInfo(block) {
-        return this.getMachineInfo(block);
+        const info = this.getMachineInfo(block);
+        if (info && block) {
+            // 位置情報を追加
+            info.location = block.location;
+        }
+        return info;
     }
 
     /**
@@ -95,8 +100,8 @@ export class Generator extends BaseMachine {
         // 常に稼働状態
         this.updateVisualState(block, true);
         
-        // パーティクルエフェクト
-        ParticleEffectManager.spawnGeneratorEffect(block, "test");
+        // パーティクルエフェクト（無効化）
+        // ParticleEffectManager.spawnGeneratorEffect(block, "test");
     }
 
     /**
@@ -117,14 +122,19 @@ export class Generator extends BaseMachine {
             // 視覚効果の更新
             this.updateVisualState(block, true);
             
-            // パーティクルエフェクト
-            ParticleEffectManager.spawnGeneratorEffect(block, "normal");
+            // 燃焼進行状況をブロックステートに反映
+            this.updateBurnProgressState(block, data);
+            
+            // パーティクルエフェクト（無効化）
+            // ParticleEffectManager.spawnGeneratorEffect(block, "normal");
             
             // 燃料が尽きた場合
             if (data.burnTime <= 0) {
                 data.fuelItem = null;
                 data.maxBurnTime = 0;
                 this.machines.set(energySystem.getLocationKey(block.location), data);
+                // 進行状況をリセット
+                this.updateBurnProgressState(block, { burnTime: 0, maxBurnTime: 0 });
             }
         } else {
             // 新しい燃料を取得
@@ -139,11 +149,16 @@ export class Generator extends BaseMachine {
                     
                     // 燃料を消費
                     this.consumeFuel(block);
+                    
+                    // 燃焼エフェクトの開始
+                    Logger.info(`燃料燃焼開始: ${newFuel.typeId} (${burnTime}tick)`, "Generator");
                 }
             }
             
             // アイドル状態
             this.updateVisualState(block, false);
+            // 進行状況を0に
+            this.updateBurnProgressState(block, { burnTime: 0, maxBurnTime: 0 });
         }
     }
 
@@ -165,18 +180,34 @@ export class Generator extends BaseMachine {
     }
 
     /**
-     * インベントリから燃料を取得
+     * 上部のインベントリから燃料を取得
      * @private
      */
     getFuelFromInventory(block) {
         return ErrorHandler.safeTry(() => {
-            const inventory = block.getComponent("minecraft:inventory");
-            if (!inventory?.container) return null;
+            // 上部のブロックを取得
+            const aboveLocation = {
+                x: block.location.x,
+                y: block.location.y + 1,
+                z: block.location.z
+            };
+            const aboveBlock = block.dimension.getBlock(aboveLocation);
+            
+            if (!aboveBlock) return null;
+            
+            // 上部ブロックのインベントリを確認
+            const inventory = aboveBlock.getComponent("minecraft:inventory");
+            if (!inventory?.container) {
+                // チェストやホッパーなどのインベントリがない場合
+                Logger.debug(`上部ブロック ${aboveBlock.typeId} にインベントリがありません`, "Generator");
+                return null;
+            }
             
             const container = inventory.container;
             for (let i = 0; i < container.size; i++) {
                 const item = container.getItem(i);
                 if (item && FuelRegistry.isFuel(item.typeId)) {
+                    Logger.debug(`燃料発見: ${item.typeId} x${item.amount}`, "Generator");
                     return item;
                 }
             }
@@ -185,12 +216,22 @@ export class Generator extends BaseMachine {
     }
 
     /**
-     * 燃料を消費
+     * 上部のインベントリから燃料を消費
      * @private
      */
     consumeFuel(block) {
         return ErrorHandler.safeTry(() => {
-            const inventory = block.getComponent("minecraft:inventory");
+            // 上部のブロックを取得
+            const aboveLocation = {
+                x: block.location.x,
+                y: block.location.y + 1,
+                z: block.location.z
+            };
+            const aboveBlock = block.dimension.getBlock(aboveLocation);
+            
+            if (!aboveBlock) return false;
+            
+            const inventory = aboveBlock.getComponent("minecraft:inventory");
             if (!inventory?.container) return false;
             
             const container = inventory.container;
@@ -211,6 +252,7 @@ export class Generator extends BaseMachine {
                     }
                     
                     BlockUtils.playSound(block, Constants.SOUNDS.FIZZ, { volume: 0.3 });
+                    Logger.debug(`燃料消費: ${item.typeId}`, "Generator");
                     return true;
                 }
             }
@@ -233,6 +275,42 @@ export class Generator extends BaseMachine {
         const data = this.getMachineInfo(block);
         return data && data.burnTime > 0;
     }
+
+    /**
+     * 視覚的な状態を更新
+     * @private
+     */
+    updateVisualState(block, isActive) {
+        return ErrorHandler.safeTry(() => {
+            BlockUtils.setBlockState(block, "magisystem:active", isActive ? 1 : 0);
+        }, "Generator.updateVisualState");
+    }
+
+    /**
+     * 燃焼進行状況をブロックステートに反映
+     * @private
+     */
+    updateBurnProgressState(block, data) {
+        return ErrorHandler.safeTry(() => {
+            if (!data || data.maxBurnTime <= 0) {
+                BlockUtils.setBlockState(block, "magisystem:burn_progress", 0);
+                return;
+            }
+            
+            // 進行状況を0-10の範囲に変換（逆順：満タンが10、空が0）
+            const progress = data.burnTime / data.maxBurnTime;
+            const progressState = Math.floor(progress * 10);
+            
+            // ブロックステートを更新
+            BlockUtils.setBlockState(block, "magisystem:burn_progress", progressState);
+        }, "Generator.updateBurnProgressState");
+    }
+
+
+
+
+
+
 }
 
 // シングルトンインスタンスをエクスポート

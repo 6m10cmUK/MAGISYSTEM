@@ -16,7 +16,8 @@ export const Constants = {
     // ブロックタイプ
     BLOCK_TYPES: {
         // 発電機
-        GENERATOR: 'magisystem:generator',
+        GENERATOR: 'magisystem:thermal_generator',  // thermal_generatorに更新
+        THERMAL_GENERATOR: 'magisystem:thermal_generator',
         CREATIVE_GENERATOR: 'magisystem:creative_generator',
         SOLAR_GENERATOR: 'magisystem:solar_generator',
         
