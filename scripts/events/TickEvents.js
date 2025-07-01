@@ -10,6 +10,7 @@ import { generator } from "../machines/Generator.js";
 import { creativeGenerator } from "../machines/CreativeGenerator.js";
 import { battery } from "../machines/Battery.js";
 import { itemNetwork } from "../items/ItemNetwork.js";
+import { itemTransportManager } from "../items/ItemTransportManager.js";
 import { Constants } from "../core/Constants.js";
 import { Logger } from "../core/Logger.js";
 import { Utils } from "../core/Utils.js";
@@ -227,7 +228,11 @@ export class TickEvents extends BaseEventHandler {
      */
     updateItemTransfer() {
         try {
-            itemNetwork.update();
+            // ItemTransportManagerは自身でtick管理をしているため、ここでは呼ばない
+            // 2秒ごとに新しくロードされたチャンクをチェックのみ
+            if (itemTransportManager.isRunning && system.currentTick % 40 === 0) {
+                itemTransportManager.checkNewlyLoadedChunks();
+            }
         } catch (error) {
             ErrorHandler.handleError(error, "TickEvents.updateItemTransfer");
         }

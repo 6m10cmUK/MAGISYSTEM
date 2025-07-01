@@ -6,6 +6,7 @@
 import { ItemStack } from "@minecraft/server";
 import { Logger } from "../core/Logger.js";
 import { generator } from "../machines/Generator.js";
+import { Utils } from "../core/Utils.js";
 
 export class SimpleItemTransport {
     /**
@@ -86,9 +87,10 @@ export class SimpleItemTransport {
      * パイプネットワークを通じてアイテムを探索・輸送
      * @param {Block} sourceBlock - 輸送元ブロック
      * @param {Block} outputPipe - 出力パイプ
+     * @param {ItemTransportManager} transportManager - 輸送マネージャー（オプション）
      * @returns {number} 輸送したアイテム数
      */
-    static transferThroughNetwork(sourceBlock, outputPipe) {
+    static transferThroughNetwork(sourceBlock, outputPipe, transportManager = null) {
         try {
             // 利用可能な全ての輸送先を探す
             const destinations = this.findAllDestinations(outputPipe);
@@ -110,12 +112,34 @@ export class SimpleItemTransport {
                 const destIndex = (currentIndex + i) % destinations.length;
                 const destination = destinations[destIndex];
                 
+                // 輸送前にアイテム情報を取得
+                let itemInfo = null;
+                if (transportManager) {
+                    const sourceInv = sourceBlock.getComponent("minecraft:inventory");
+                    if (sourceInv?.container) {
+                        for (let j = 0; j < sourceInv.container.size; j++) {
+                            const item = sourceInv.container.getItem(j);
+                            if (item && item.amount > 0) {
+                                itemInfo = { typeId: item.typeId, amount: 1 };
+                                break;
+                            }
+                        }
+                    }
+                }
+                
                 // アイテムを転送
                 const transferred = this.transferItems(sourceBlock, destination);
                 if (transferred > 0) {
                     // 次回は次の輸送先から開始
                     this.distributionIndex.set(sourceKey, (destIndex + 1) % destinations.length);
                     Logger.debug(`アイテムを輸送先${destIndex + 1}/${destinations.length}に転送`, "SimpleItemTransport");
+                    
+                    // 輸送中アイテムを記録
+                    if (transportManager && itemInfo) {
+                        const destKey = Utils.locationToKey(destination.location);
+                        transportManager.recordItemInTransit(itemInfo.typeId, itemInfo.amount, sourceKey, destKey);
+                    }
+                    
                     return transferred;
                 }
             }
@@ -206,10 +230,15 @@ export class SimpleItemTransport {
      */
     static transferToThermalGenerator(sourceBlock, targetBlock) {
         try {
+            Logger.debug(`熱発電機への輸送開始: ${targetBlock.typeId}`, "SimpleItemTransport");
+            
             // 熱発電機が既に燃料を持っているか確認
             const genInfo = generator.getGeneratorInfo(targetBlock);
+            Logger.debug(`発電機情報: ${JSON.stringify(genInfo)}`, "SimpleItemTransport");
+            
             if (genInfo && genInfo.burnTime > 0) {
                 // 既に燃焼中の場合は輸送しない
+                Logger.debug(`既に燃焼中のため輸送スキップ: burnTime=${genInfo.burnTime}`, "SimpleItemTransport");
                 return 0;
             }
             
@@ -228,19 +257,30 @@ export class SimpleItemTransport {
                 
                 // 燃料として使用可能かチェック
                 const burnTime = generator.getItemBurnTime(item.typeId);
+                Logger.debug(`アイテム ${item.typeId} の燃焼時間: ${burnTime}`, "SimpleItemTransport");
+                
                 if (burnTime > 0) {
                     // 1個だけ取り出して熱発電機に供給
-                    if (generator.tryAddFuel(targetBlock, item.typeId)) {
+                    Logger.debug(`燃料追加を試行: ${item.typeId} (元の数量: ${item.amount})`, "SimpleItemTransport");
+                    const addResult = generator.tryAddFuel(targetBlock, item.typeId);
+                    Logger.debug(`tryAddFuel結果: ${addResult}`, "SimpleItemTransport");
+                    
+                    if (addResult) {
+                        Logger.info(`熱発電機への燃料輸送成功: ${item.typeId}`, "SimpleItemTransport");
                         // 成功したら元のアイテムを減らす
                         if (item.amount > 1) {
-                            item.amount -= 1;
-                            sourceContainer.setItem(i, item);
+                            // 新しいItemStackを作成して数量を減らす
+                            const newItem = new ItemStack(item.typeId, item.amount - 1);
+                            sourceContainer.setItem(i, newItem);
+                            Logger.debug(`アイテム数を減らしました: ${item.typeId} 残り${newItem.amount}`, "SimpleItemTransport");
                         } else {
                             sourceContainer.setItem(i, undefined);
+                            Logger.debug(`アイテムを完全に削除しました: ${item.typeId}`, "SimpleItemTransport");
                         }
                         
-                        Logger.debug(`熱発電機に燃料を輸送: ${item.typeId}`, "SimpleItemTransport");
                         return 1;
+                    } else {
+                        Logger.debug(`tryAddFuelが失敗しました`, "SimpleItemTransport");
                     }
                 }
             }

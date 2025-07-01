@@ -166,9 +166,9 @@ export class BaseTransportSystem {
             if (this.isNormalBlock(adjacentType)) {
                 result = true;
             }
-            // 対象ブロックとの接続（カスタム判定関数を使用）
+            // 対象ブロックとの接続（カスタム判定関数を使用、パイプブロックも渡す）
             else {
-                result = this.canConnectToBlock(adjacent, oppositeDirection);
+                result = this.canConnectToBlock(adjacent, oppositeDirection, transportBlock);
                 if (result) {
                     Logger.debug(`${transportType}が${adjacentType}に接続可能`, this.systemName);
                 }

@@ -48,24 +48,47 @@ class MagisystemMain {
     }
 
     static registerWorldInitialize() {
+        // worldInitializeイベント（リロード時）
         world.afterEvents.worldInitialize.subscribe(() => {
-            Logger.info("ワールドが正常に初期化されました！", "Main");
-            
-            // アイテム輸送システムを開始
-            itemTransportManager.start();
-            
-            // エネルギーシステムの初期化を確実に実行
-            energySystem.initializeScoreboard();
-            
-            // 少し遅延してからブロックの復元を試みる
-            system.runTimeout(() => {
-                Logger.info("エネルギーデータの復元を開始...", "Main");
-                this.restoreEnergyData();
-            }, 20); // 1秒後
-            
-            // パイプの見た目を定期的に修正する処理を開始
-            this.startPipeVisualFix();
+            Logger.info("ワールドが正常に初期化されました！(worldInitialize)", "Main");
+            this.initializeSystems();
         });
+        
+        // プレイヤー参加イベント（ワールド再入場時）
+        world.afterEvents.playerJoin.subscribe((event) => {
+            Logger.info(`プレイヤー${event.playerName}が参加しました`, "Main");
+            
+            // 最初のプレイヤーが参加した時にシステムを開始
+            const players = world.getAllPlayers();
+            if (players.length === 1 && !this.systemsInitialized) {
+                Logger.info("最初のプレイヤーが参加 - システムを開始", "Main");
+                // チャンクがロードされるまで少し待つ
+                system.runTimeout(() => {
+                    this.initializeSystems();
+                }, 40); // 2秒待つ
+            }
+        });
+    }
+    
+    static initializeSystems() {
+        this.systemsInitialized = true;
+        
+        // アイテム輸送システムを開始（まだ開始していない場合）
+        if (!itemTransportManager.isRunning) {
+            itemTransportManager.start();
+        }
+        
+        // エネルギーシステムの初期化を確実に実行
+        energySystem.initializeScoreboard();
+        
+        // 少し遅延してからブロックの復元を試みる
+        system.runTimeout(() => {
+            Logger.info("エネルギーデータの復元を開始...", "Main");
+            this.restoreEnergyData();
+        }, 20); // 1秒後
+        
+        // パイプの見た目を定期的に修正する処理を開始
+        this.startPipeVisualFix();
     }
     
     static restoreEnergyData() {
@@ -137,6 +160,9 @@ class MagisystemMain {
                     break;
                 case "item":
                     this.checkItemTransport(player);
+                    break;
+                case "scan":
+                    this.forceRescanItemTransport(player);
                     break;
                 
                 case "help":
@@ -237,12 +263,22 @@ class MagisystemMain {
             "§7!magisystem energy - Dynamic Propertyのエネルギーデータ確認",
             "§7!magisystem loglevel <level> - ログレベルの設定",
             "§7!magisystem item - アイテム輸送システムの状態確認",
+            "§7!magisystem scan - アイテム輸送システムの強制再スキャン",
             "§7!magisystem help - このヘルプを表示",
             "§7レンチで機械を右クリック - エネルギー情報を表示",
             "§7スニーク+レンチ - 機械の設定（開発中）"
         ];
         
         helpMessages.forEach(msg => player.sendMessage(msg));
+    }
+    
+    static forceRescanItemTransport(player) {
+        player.sendMessage("§e=== アイテム輸送システム強制再スキャン ===");
+        
+        // 強制再スキャンを実行
+        itemTransportManager.forceRescanAll();
+        
+        player.sendMessage("§a強制再スキャンが完了しました");
     }
     
     static checkItemTransport(player) {
@@ -267,7 +303,11 @@ class MagisystemMain {
         
         // チャンクロード検出も手動実行
         player.sendMessage("§7チャンクロード検出を実行中...");
-        itemTransportManager.checkNewlyLoadedChunks();
+        itemTransportManager.detectChunkLoads();
+        
+        // Dynamic Properties情報を表示
+        const registeredCount = itemTransportManager.chunkDetection.registeredPipes.size;
+        player.sendMessage(`§7登録済みパイプ: §f${registeredCount}個`);
         
         // 周囲の出力パイプをスキャン
         const radius = 10;

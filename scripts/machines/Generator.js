@@ -52,6 +52,8 @@ export class Generator extends BaseMachine {
         const block = dimension.getBlock(location);
         if (block) {
             this.clearBurnData(block);
+            // アイテム表示エンティティを削除
+            this.removeItemDisplay(block);
         }
         
         return this.unregister(location, dimension);
@@ -346,11 +348,14 @@ export class Generator extends BaseMachine {
      */
     tryAddFuel(block, itemTypeId) {
         try {
+            Logger.debug(`tryAddFuel開始: ${itemTypeId}`, "Generator");
+            
             // 発電機の情報を取得
             const key = energySystem.getLocationKey(block.location);
             let data = this.machines.get(key);
             
             if (!data) {
+                Logger.debug(`発電機データがないため登録`, "Generator");
                 this.registerGenerator(block);
                 data = this.machines.get(key);
             }
@@ -368,23 +373,32 @@ export class Generator extends BaseMachine {
                 return false;
             }
             
+            Logger.debug(`燃料データ設定前: burnTime=${data.burnTime}, maxBurnTime=${data.maxBurnTime}`, "Generator");
+            
             // 燃料を設定
             data.burnTime = burnTime;
             data.maxBurnTime = burnTime;
             data.fuelItem = itemTypeId;
             this.machines.set(key, data);
             
+            Logger.debug(`燃料データ設定後: burnTime=${data.burnTime}, maxBurnTime=${data.maxBurnTime}`, "Generator");
+            
             // 燃焼状態を保存
             this.saveBurnData(block, data);
             
+            // 視覚状態を更新
+            this.updateVisualState(block, true);
+            this.updateBurnProgressState(block, data);
+            
             // 燃焼エフェクトの開始
-            Logger.info(`パイプから燃料追加: ${itemTypeId} (${burnTime}tick)`, "Generator");
+            Logger.info(`パイプから燃料追加成功: ${itemTypeId} (${burnTime}tick)`, "Generator");
             BlockUtils.playSound(block, Constants.SOUNDS.FIZZ, { volume: 0.3 });
             
             return true;
             
         } catch (error) {
-            Logger.error(`燃料追加エラー: ${error}`, "Generator");
+            Logger.error(`燃料追加エラー: ${error.message}`, "Generator");
+            Logger.error(`スタックトレース: ${error.stack}`, "Generator");
             return false;
         }
     }
@@ -450,6 +464,7 @@ export class Generator extends BaseMachine {
             Logger.debug(`燃焼状態をクリア: ${key}`, "Generator");
         }, "Generator.clearBurnData");
     }
+
 }
 
 // シングルトンインスタンスをエクスポート

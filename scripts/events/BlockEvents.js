@@ -268,18 +268,6 @@ export class BlockEvents extends BaseEventHandler {
     handleEnergyBlockBreak(typeId, location, dimension, brokenPermutation) {
         // 発電機の場合
         if (typeId === Constants.BLOCK_TYPES.GENERATOR || typeId === Constants.BLOCK_TYPES.THERMAL_GENERATOR) {
-            // 表示エンティティを削除（すべてのタイプ）
-            const tag = `generator_${location.x}_${location.y}_${location.z}`;
-            const entities = dimension.getEntities({
-                tags: [tag],
-                location: location,
-                maxDistance: 2
-            });
-            
-            for (const entity of entities) {
-                entity.remove();
-            }
-            
             generator.unregisterGenerator(location, dimension);
         }
         // クリエイティブ発電機の場合
