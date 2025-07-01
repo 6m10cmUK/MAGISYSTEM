@@ -161,12 +161,16 @@ export class SimpleItemTransport {
         const visited = new Set();
         const queue = [outputPipe];
         
+        Logger.debug(`出力パイプから輸送先を探索開始: ${outputPipe.location.x},${outputPipe.location.y},${outputPipe.location.z}`, "SimpleItemTransport");
+        
         while (queue.length > 0) {
             const current = queue.shift();
             const key = `${current.location.x}_${current.location.y}_${current.location.z}`;
             
             if (visited.has(key)) continue;
             visited.add(key);
+            
+            Logger.debug(`現在のブロック: ${current.typeId} at ${key}`, "SimpleItemTransport");
             
             // 隣接ブロックを確認
             const adjacents = [
@@ -181,15 +185,23 @@ export class SimpleItemTransport {
             for (const adj of adjacents) {
                 if (!adj) continue;
                 
+                const adjKey = `${adj.location.x}_${adj.location.y}_${adj.location.z}`;
+                
+                // 既に訪問済みならスキップ
+                if (visited.has(adjKey)) continue;
+                
+                Logger.debug(`隣接ブロック確認: ${adj.typeId} at ${adjKey}`, "SimpleItemTransport");
+                
                 // 通常パイプの場合、探索を続ける
                 if (adj.typeId === "magisystem:pipe") {
-                    const adjKey = `${adj.location.x}_${adj.location.y}_${adj.location.z}`;
-                    if (!visited.has(adjKey)) {
-                        queue.push(adj);
-                    }
+                    Logger.debug(`通常パイプを探索キューに追加`, "SimpleItemTransport");
+                    queue.push(adj);
                 }
-                // 入力パイプの場合、隣接するインベントリを確認
+                // 入力パイプの場合
                 else if (adj.typeId === "magisystem:pipe_input") {
+                    Logger.debug(`入力パイプを発見`, "SimpleItemTransport");
+                    
+                    // 入力パイプの隣接ブロックを確認してインベントリを探す
                     const inputAdjacents = [
                         adj.above(),
                         adj.below(),
@@ -199,21 +211,36 @@ export class SimpleItemTransport {
                         adj.west()
                     ];
                     
+                    let hasInventory = false;
+                    
                     for (const target of inputAdjacents) {
                         if (!target) continue;
                         
-                        // 通常のインベントリチェック
-                        const inv = target.getComponent("minecraft:inventory");
-                        if (inv?.container && target.typeId !== "magisystem:pipe" && 
+                        // パイプ以外のブロックをチェック
+                        if (target.typeId !== "magisystem:pipe" && 
                             target.typeId !== "magisystem:pipe_input" && 
                             target.typeId !== "magisystem:pipe_output") {
-                            destinations.push(target);
-                        }
-                        // 熱発電機の場合も輸送先として追加
-                        else if (target.typeId === "magisystem:thermal_generator") {
-                            destinations.push(target);
+                            
+                            // 通常のインベントリチェック
+                            const inv = target.getComponent("minecraft:inventory");
+                            if (inv?.container) {
+                                Logger.debug(`輸送先発見: ${target.typeId} at ${target.location.x},${target.location.y},${target.location.z}`, "SimpleItemTransport");
+                                destinations.push(target);
+                                hasInventory = true;
+                            }
+                            // 熱発電機の場合も輸送先として追加
+                            else if (target.typeId === "magisystem:thermal_generator") {
+                                Logger.debug(`熱発電機を輸送先として追加: ${target.location.x},${target.location.y},${target.location.z}`, "SimpleItemTransport");
+                                destinations.push(target);
+                                hasInventory = true;
+                            }
                         }
                     }
+                    
+                    // 入力パイプ自体も探索を続けるためキューに追加
+                    // これにより、入力パイプの先にある他のパイプネットワークも探索される
+                    Logger.debug(`入力パイプを探索キューに追加（継続探索）`, "SimpleItemTransport");
+                    queue.push(adj);
                 }
             }
         }
