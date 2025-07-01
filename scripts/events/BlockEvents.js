@@ -3,7 +3,7 @@
  * BaseEventHandlerを継承した統一的な実装
  */
 
-import { world, ItemStack } from "@minecraft/server";
+import { world, system, ItemStack } from "@minecraft/server";
 import { BaseEventHandler } from "./BaseEventHandler.js";
 import { energySystem } from "../energy/EnergySystem.js";
 import { generator } from "../machines/Generator.js";
@@ -11,6 +11,7 @@ import { creativeGenerator } from "../machines/CreativeGenerator.js";
 import { battery } from "../machines/Battery.js";
 import { mfCableSystem } from "../cables/MFCableSystem.js";
 import { itemPipeSystem } from "../pipes/ItemPipeSystem.js";
+import { itemTransportManager } from "../items/ItemTransportManager.js";
 import BlockUtils from "../utils/BlockUtils.js";
 import { Constants } from "../core/Constants.js";
 import { Logger } from "../core/Logger.js";
@@ -88,6 +89,28 @@ export class BlockEvents extends BaseEventHandler {
         if (energySystem.isEnergyBlock(block)) {
             this.handleEnergyBlockPlace(block, player);
         }
+        
+        // インベントリブロックの場合、隣接するパイプを更新
+        if (itemPipeSystem.hasInventory(block)) {
+            this.updateAdjacentPipes(block);
+            
+            // 隣接する出力パイプがあればItemTransportManagerに通知
+            const adjacents = [
+                block.above(),
+                block.below(),
+                block.north(),
+                block.south(),
+                block.east(),
+                block.west()
+            ];
+            
+            for (const adjacent of adjacents) {
+                if (adjacent?.typeId === "magisystem:pipe_output") {
+                    itemTransportManager.registerTransportSource(block);
+                    break;
+                }
+            }
+        }
     }
 
     /**
@@ -114,6 +137,16 @@ export class BlockEvents extends BaseEventHandler {
         // パイプの場合
         else if (BlockTypeUtils.isPipe(typeId)) {
             itemPipeSystem.onBlockRemoved(location, dimension);
+            
+            // アイテム輸送マネージャーに通知
+            itemTransportManager.onPipeRemoved(location, dimension, typeId);
+        }
+        
+        // インベントリブロックの場合、隣接するパイプを更新
+        const inventory = brokenBlockPermutation.getComponent?.("minecraft:inventory");
+        if (inventory || itemPipeSystem.inventoryBlocks.has(typeId) || 
+            typeId === Constants.BLOCK_TYPES.THERMAL_GENERATOR) {
+            this.updateAdjacentPipesAtLocation(location, dimension);
         }
     }
 
@@ -143,6 +176,11 @@ export class BlockEvents extends BaseEventHandler {
     handleGeneratorPlace(block, player) {
         Logger.info(`発電機を配置: ${block.typeId}`, this.name);
         this.handleMachinePlace(block, player, generator, "発電機");
+        
+        // 熱発電機の場合、隣接するパイプを更新
+        if (block.typeId === Constants.BLOCK_TYPES.THERMAL_GENERATOR) {
+            this.updateAdjacentPipes(block);
+        }
     }
 
     handleCreativeGeneratorPlace(block, player) {
@@ -189,6 +227,31 @@ export class BlockEvents extends BaseEventHandler {
 
     handlePipePlace(block, player) {
         itemPipeSystem.onBlockPlaced(block);
+        
+        // アイテム輸送マネージャーに通知
+        itemTransportManager.onPipePlaced(block);
+        
+        // 強制的に接続状態を更新（1tick後）
+        system.runTimeout(() => {
+            itemPipeSystem.updatePattern(block);
+            
+            // 隣接するパイプも再度更新
+            const adjacents = [
+                block.above(),
+                block.below(),
+                block.north(),
+                block.south(),
+                block.east(),
+                block.west()
+            ];
+            
+            for (const adj of adjacents) {
+                if (adj && itemPipeSystem.isTransportBlock(adj)) {
+                    itemPipeSystem.updatePattern(adj);
+                }
+            }
+        }, 1);
+        
         BlockUtils.playSound(block, Constants.SOUNDS.BLOCK_PLACE, { volume: 0.5 });
         this.sendDebugMessage(player, `パイプを配置: ${block.typeId}`);
     }
@@ -205,18 +268,6 @@ export class BlockEvents extends BaseEventHandler {
     handleEnergyBlockBreak(typeId, location, dimension, brokenPermutation) {
         // 発電機の場合
         if (typeId === Constants.BLOCK_TYPES.GENERATOR || typeId === Constants.BLOCK_TYPES.THERMAL_GENERATOR) {
-            // 表示エンティティを削除（すべてのタイプ）
-            const tag = `generator_${location.x}_${location.y}_${location.z}`;
-            const entities = dimension.getEntities({
-                tags: [tag],
-                location: location,
-                maxDistance: 2
-            });
-            
-            for (const entity of entities) {
-                entity.remove();
-            }
-            
             generator.unregisterGenerator(location, dimension);
         }
         // クリエイティブ発電機の場合
@@ -360,6 +411,57 @@ export class BlockEvents extends BaseEventHandler {
             default:
                 return 'バッテリー';
         }
+    }
+    
+    /**
+     * 隣接するパイプを更新
+     * @param {Block} block
+     */
+    updateAdjacentPipes(block) {
+        // 全キャッシュをクリア（確実に更新するため）
+        itemPipeSystem.clearAllCache();
+        
+        const adjacents = [
+            block.above(),
+            block.below(),
+            block.north(),
+            block.south(),
+            block.east(),
+            block.west()
+        ];
+        
+        for (const adjacent of adjacents) {
+            if (adjacent && itemPipeSystem.isTransportBlock(adjacent)) {
+                // 1tick後に更新（確実に反映させるため）
+                system.runTimeout(() => {
+                    itemPipeSystem.updatePattern(adjacent);
+                }, 1);
+            }
+        }
+    }
+    
+    /**
+     * 特定位置の隣接するパイプを更新
+     * @param {Vector3} location
+     * @param {Dimension} dimension
+     */
+    updateAdjacentPipesAtLocation(location, dimension) {
+        // 全キャッシュをクリア（確実に更新するため）
+        itemPipeSystem.clearAllCache();
+        
+        const offsets = Object.values(Constants.DIRECTIONS);
+        
+        // 1tick後に更新（確実に反映させるため）
+        system.runTimeout(() => {
+            for (const offset of offsets) {
+                const adjacentLocation = Utils.addLocation(location, offset);
+                const adjacentBlock = Utils.getBlockSafe(dimension, adjacentLocation);
+                
+                if (adjacentBlock && itemPipeSystem.isTransportBlock(adjacentBlock)) {
+                    itemPipeSystem.updatePattern(adjacentBlock);
+                }
+            }
+        }, 1);
     }
 }
 

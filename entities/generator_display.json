@@ -14,6 +14,10 @@
       "minecraft:type_family": {
         "family": ["inanimate"]
       },
+      "minecraft:collision_box": {
+        "width": 0.01,
+        "height": 0.01
+      },
       "minecraft:damage_sensor": {
         "triggers": []
       },
@@ -21,11 +25,21 @@
         "value": 1.0
       },
       "minecraft:pushable": {
-        "is_pushable": false
+        "is_pushable": false,
+        "is_pushable_by_piston": false
       },
       "minecraft:physics": {
         "has_gravity": false,
         "has_collision": false
+      },
+      "minecraft:scale": {
+        "value": 0.35
+      },
+      "minecraft:behavior.float": {
+        "priority": 0
+      },
+      "minecraft:is_stackable": {
+        "value": false
       }
     },
     "events": {

@@ -67,18 +67,19 @@ export class DisplaySystem {
             return;
         }
 
-        // ブロック情報を収集
-        const info = InfoGatherer.gatherBlockInfo(blockRay.block);
-        if (!info) {
-            this.clearDisplay(player);
-            return;
-        }
+        // ブロック情報を収集（非同期）
+        InfoGatherer.gatherBlockInfo(blockRay.block).then(info => {
+            if (!info) {
+                this.clearDisplay(player);
+                return;
+            }
 
-        // ActionBar用にフォーマットして表示
-        const displayText = DisplayFormatter.formatForActionBar(info);
-        if (displayText) {
-            player.onScreenDisplay.setActionBar(displayText);
-        }
+            // ActionBar用にフォーマットして表示
+            const displayText = DisplayFormatter.formatForActionBar(info);
+            if (displayText) {
+                player.onScreenDisplay.setActionBar(displayText);
+            }
+        });
     }
 
     /**

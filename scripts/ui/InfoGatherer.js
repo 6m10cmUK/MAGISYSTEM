@@ -89,7 +89,7 @@ export class InfoGatherer {
      * @param {Block} block - 対象ブロック
      * @returns {Object} 情報オブジェクト
      */
-    static gatherPipeInfo(block) {
+    static async gatherPipeInfo(block) {
         const info = {
             type: "pipe",
             typeId: block.typeId,
@@ -103,10 +103,30 @@ export class InfoGatherer {
         if (connectionInfo) {
             info.data.connections = connectionInfo.count;
             info.data.pattern = connectionInfo.pattern;
+            
+            // 接続詳細を取得
+            const states = block.permutation.getAllStates();
+            info.data.connectionDetails = {
+                above: states["magisystem:above"] || "none",
+                below: states["magisystem:below"] || "none",
+                north: states["magisystem:north"] || "none",
+                south: states["magisystem:south"] || "none",
+                east: states["magisystem:east"] || "none",
+                west: states["magisystem:west"] || "none"
+            };
         }
 
         // ネットワーク情報
         const network = itemNetwork.findConnectedNetwork(block, false);
+        
+        // デバッグ：輸送マネージャーの状態
+        const { itemTransportManager } = await import("../items/ItemTransportManager.js");
+        const debugInfo = itemTransportManager.getDebugInfo();
+        info.data.transportManager = {
+            running: debugInfo.isRunning,
+            sources: debugInfo.transportSources,
+            ticks: debugInfo.tickCounter
+        };
         info.data.networkSize = network.size;
 
         return info;
@@ -159,7 +179,7 @@ export class InfoGatherer {
      * @param {Block} block - 対象ブロック
      * @returns {Object} 情報オブジェクト
      */
-    static gatherBlockInfo(block) {
+    static async gatherBlockInfo(block) {
         const typeId = block.typeId;
 
         if (energySystem.isEnergyBlock(block)) {
@@ -169,7 +189,7 @@ export class InfoGatherer {
                    typeId === Constants.BLOCK_TYPES.CABLE_OUTPUT) {
             return this.gatherCableInfo(block);
         } else if (BlockTypeUtils.isPipe(typeId)) {
-            return this.gatherPipeInfo(block);
+            return await this.gatherPipeInfo(block);
         } else if (itemPipeSystem.hasInventory(block)) {
             return this.gatherInventoryInfo(block);
         }

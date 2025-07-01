@@ -20,8 +20,35 @@ export class ItemPipeSystem extends BaseTransportSystem {
                 "magisystem:pipe_input",
                 "magisystem:pipe_output"
             ],
-            canConnectToBlock: (block, oppositeDirection) => {
-                return ItemPipeSystem.canConnectToInventoryBlock(block);
+            canConnectToBlock: (block, oppositeDirection, pipeBlock) => {
+                // 熱発電機は入力パイプからのみ接続可能
+                if (block.typeId === "magisystem:thermal_generator") {
+                    return pipeBlock && pipeBlock.typeId === "magisystem:pipe_input";
+                }
+                
+                // インベントリコンポーネントを持つブロックかチェック
+                const inventory = block.getComponent("minecraft:inventory");
+                if (inventory?.container) {
+                    return true;
+                }
+                
+                // タグベースの判定
+                if (block.hasTag("item_storage") ||
+                    block.hasTag("item_input") ||
+                    block.hasTag("item_output") ||
+                    block.hasTag("inventory")) {
+                    return true;
+                }
+                
+                // MAGISYSTEMの機械
+                if (block.typeId.startsWith("magisystem:") && 
+                    (block.typeId.includes("machine") || 
+                     block.typeId.includes("storage") ||
+                     block.typeId.includes("processor"))) {
+                    return true;
+                }
+                
+                return false;
             }
         });
 
@@ -61,9 +88,10 @@ export class ItemPipeSystem extends BaseTransportSystem {
     /**
      * インベントリブロックへの接続可否を判定
      * @param {Block} block 
+     * @param {Block} pipeBlock - 接続元のパイプブロック
      * @returns {boolean}
      */
-    static canConnectToInventoryBlock(block) {
+    static canConnectToInventoryBlock(block, pipeBlock = null) {
         // タグベースの判定
         if (block.hasTag("item_storage") ||
             block.hasTag("item_input") ||
@@ -80,6 +108,11 @@ export class ItemPipeSystem extends BaseTransportSystem {
             return true;
         }
 
+        // 熱発電機は入力パイプからのみ接続可能
+        if (block.typeId === "magisystem:thermal_generator") {
+            return pipeBlock && pipeBlock.typeId === "magisystem:pipe_input";
+        }
+
         return false;
     }
 
@@ -88,9 +121,16 @@ export class ItemPipeSystem extends BaseTransportSystem {
      * @param {Block} block 
      * @returns {boolean}
      */
-    hasInventory(block) {
+    hasInventory(block, pipeBlock = null) {
+        // インベントリコンポーネントを持つかチェック
+        const inventory = block.getComponent("minecraft:inventory");
+        if (inventory?.container) {
+            return true;
+        }
+        
+        // 既知のインベントリブロックリストをチェック
         return this.inventoryBlocks.has(block.typeId) || 
-               ItemPipeSystem.canConnectToInventoryBlock(block);
+               ItemPipeSystem.canConnectToInventoryBlock(block, pipeBlock);
     }
 
     /**

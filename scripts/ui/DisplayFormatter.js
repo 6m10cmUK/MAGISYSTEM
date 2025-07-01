@@ -25,18 +25,6 @@ export class DisplayFormatter {
                 parts.push(`§f${InfoGatherer.formatNumber(info.data.energy)}/${InfoGatherer.formatNumber(info.data.maxEnergy)} MF(§f${info.data.percent}%)`);
                 break;
 
-            case "cable":
-                parts.push(`§7転送量: §f${info.data.transferRate} MF/s`);
-                break;
-
-            case "pipe":
-                parts.push(`§7転送量: §f${info.data.transferRate} アイテム/s`);
-                if (info.data.connections !== undefined) {
-                    parts.push(`§7接続: §f${info.data.connections}方向`);
-                }
-                parts.push(`§7ネット: §f${info.data.networkSize}個`);
-                break;
-
             case "inventory":
                 parts.push(`§7アイテム: §f${info.data.itemCount}個`);
                 parts.push(`§7スロット: §f${info.data.slotCount}/${info.data.totalSlots}`);
