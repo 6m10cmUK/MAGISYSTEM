@@ -1,0 +1,14 @@
+{
+    "pools": [
+        {
+            "rolls": 1,
+            "entries": [
+                {
+                    "type": "item",
+                    "name": "magisystem:seebeck_generator",
+                    "weight": 1
+                }
+            ]
+        }
+    ]
+}

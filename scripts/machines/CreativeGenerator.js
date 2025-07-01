@@ -22,7 +22,7 @@ export class CreativeGenerator extends BaseMachine {
             soundOnPlace: Constants.SOUNDS.BLOCK_PLACE
         });
         
-        this.generationRate = 100; // MF/tick (通常発電機の2.5倍)
+        this.generationRate = Constants.GENERATOR.CREATIVE_OUTPUT; // MF/tick
     }
 
     /**

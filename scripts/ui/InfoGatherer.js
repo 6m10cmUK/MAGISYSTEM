@@ -20,7 +20,7 @@ export class InfoGatherer {
      * @param {Block} block - 対象ブロック
      * @returns {Object} 情報オブジェクト
      */
-    static gatherEnergyInfo(block) {
+    static async gatherEnergyInfo(block) {
         const typeId = block.typeId;
         const info = {
             type: "energy",
@@ -61,6 +61,16 @@ export class InfoGatherer {
             const batteryInfo = battery.getBatteryInfo(block);
             if (batteryInfo) {
                 info.data.transferRate = batteryInfo.transferRate;
+            }
+        }
+        // ゼーベック発電機
+        else if (typeId === 'magisystem:seebeck_generator') {
+            const { seebeckGenerator } = await import("../machines/SeebeckGenerator.js");
+            const genInfo = seebeckGenerator.getSeebeckGeneratorInfo(block);
+            if (genInfo) {
+                info.data.isActive = genInfo.isGenerating;
+                info.data.generationRate = seebeckGenerator.generationRate;
+                info.data.requiresLavaAndWater = true;
             }
         }
         // 電気炉
@@ -200,7 +210,7 @@ export class InfoGatherer {
         const typeId = block.typeId;
 
         if (energySystem.isEnergyBlock(block)) {
-            return this.gatherEnergyInfo(block);
+            return await this.gatherEnergyInfo(block);
         } else if (typeId === Constants.BLOCK_TYPES.CABLE || 
                    typeId === Constants.BLOCK_TYPES.CABLE_INPUT || 
                    typeId === Constants.BLOCK_TYPES.CABLE_OUTPUT) {
