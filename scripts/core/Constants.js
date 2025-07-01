@@ -74,6 +74,8 @@ export const Constants = {
         FUEL_MULTIPLIER: 1,
         SOLAR_OUTPUT_DAY: 5, // MF/tick
         SOLAR_OUTPUT_NIGHT: 0, // MF/tick
+        SEEBECK_OUTPUT: 60, // MF/tick
+        SEEBECK_CAPACITY: 10000, // MF
     },
 
     // バッテリー設定

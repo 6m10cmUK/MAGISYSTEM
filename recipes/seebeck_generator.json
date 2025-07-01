@@ -1,0 +1,42 @@
+{
+    "format_version": "1.21.59",
+    "minecraft:recipe_shaped": {
+        "description": {
+            "identifier": "magisystem:seebeck_generator"
+        },
+        "tags": ["crafting_table"],
+        "pattern": [
+            "IRI",
+            "CDC",
+            "IRI"
+        ],
+        "key": {
+            "I": {
+                "item": "minecraft:iron_ingot"
+            },
+            "R": {
+                "item": "minecraft:redstone"
+            },
+            "C": {
+                "item": "minecraft:copper_ingot"
+            },
+            "D": {
+                "item": "minecraft:diamond"
+            }
+        },
+        "unlock": [
+            {
+                "context": "PlayerHasItems",
+                "items": [
+                    {
+                        "item": "minecraft:diamond"
+                    }
+                ]
+            }
+        ],
+        "result": {
+            "item": "magisystem:seebeck_generator",
+            "count": 1
+        }
+    }
+}

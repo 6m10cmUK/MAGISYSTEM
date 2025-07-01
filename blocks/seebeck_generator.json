@@ -1,0 +1,22 @@
+{
+    "format_version": "1.21.59",
+    "minecraft:block": {
+        "description": {
+            "identifier": "magisystem:seebeck_generator",
+            "menu_category": {
+                "category": "nature",
+                "group": "itemGroup.name.functional"
+            }
+        },
+        "components": {
+            "minecraft:destructible_by_mining": {
+                "seconds_to_destroy": 3
+            },
+            "minecraft:destructible_by_explosion": {
+                "explosion_resistance": 30
+            },
+            "minecraft:light_emission": 8,
+            "minecraft:loot": "loot_tables/blocks/seebeck_generator.json"
+        }
+    }
+}
