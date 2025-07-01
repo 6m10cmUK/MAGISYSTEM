@@ -48,7 +48,7 @@ export class ItemTransportManager {
             }
         };
         
-        Logger.info("アイテム輸送管理システムを初期化", "ItemTransportManager");
+        Logger.debug("アイテム輸送管理システムを初期化", "ItemTransportManager");
     }
 
     /**
@@ -112,7 +112,7 @@ export class ItemTransportManager {
             this.intervalId = null;
         }
         
-        Logger.info("アイテム輸送システムを停止", "ItemTransportManager");
+        Logger.debug("アイテム輸送システムを停止", "ItemTransportManager");
     }
 
     /**
@@ -312,6 +312,7 @@ export class ItemTransportManager {
                             if (adj.typeId === "magisystem:thermal_generator") {
                                 continue;
                             }
+                            // 電気炉は出力パイプに隣接していても輸送元として追加
                             sourceBlocks.push(adj);
                         }
                     }
@@ -524,11 +525,11 @@ export class ItemTransportManager {
         // 出力パイプの場合、登録
         if (pipeBlock.typeId === "magisystem:pipe_output") {
             this.registerOutputPipeInternal(pipeBlock);
-            Logger.info(`出力パイプを設置・登録`, "ItemTransportManager");
+            Logger.debug(`出力パイプを設置・登録`, "ItemTransportManager");
             
             // 隣接インベントリがあるか確認
             if (this.hasAdjacentInventory(pipeBlock)) {
-                Logger.info(`インベントリ付き出力パイプを登録`, "ItemTransportManager");
+                Logger.debug(`インベントリ付き出力パイプを登録`, "ItemTransportManager");
             }
         }
     }
@@ -549,7 +550,7 @@ export class ItemTransportManager {
             world.setDynamicProperty(propKey, undefined);
             this.chunkDetection.registeredPipes.delete(propKey);
             
-            Logger.info(`出力パイプの登録を解除`, "ItemTransportManager");
+            Logger.debug(`出力パイプの登録を解除`, "ItemTransportManager");
         }
     }
 
@@ -847,7 +848,7 @@ export class ItemTransportManager {
      * 強制的に全パイプを再スキャン
      */
     forceRescanAll() {
-        Logger.info("強制的に全パイプを再スキャンします", "ItemTransportManager");
+        Logger.debug("強制的に全パイプを再スキャンします", "ItemTransportManager");
         
         // 現在の出力パイプをクリア
         this.outputPipes.clear();
@@ -861,7 +862,7 @@ export class ItemTransportManager {
             this.scanAroundLocation(player.location, player.dimension, 50);
         }
         
-        Logger.info(`強制再スキャン完了: ${this.outputPipes.size}個の出力パイプがアクティブ`, "ItemTransportManager");
+        Logger.debug(`強制再スキャン完了: ${this.outputPipes.size}個の出力パイプがアクティブ`, "ItemTransportManager");
     }
     
     /**
@@ -899,7 +900,7 @@ export class ItemTransportManager {
                                     const postSize = this.outputPipes.size;
                                     
                                     if (postSize > preSize) {
-                                        Logger.info(`出力パイプ発見・登録: ${Utils.locationToKey(location)}`, "ItemTransportManager");
+                                        Logger.debug(`出力パイプ発見・登録: ${Utils.locationToKey(location)}`, "ItemTransportManager");
                                     }
                                 }
                             } catch (blockError) {
@@ -951,7 +952,7 @@ export class ItemTransportManager {
                     // 30ブロック以上移動した場合は強制的にフルスキャン
                     if (distance > 30) {
                         forceFullScan = true;
-                        Logger.info(`プレイヤー ${player.name} が大きく移動したため、周囲をスキャン (${Math.floor(distance)}ブロック)`, "ItemTransportManager");
+                        Logger.debug(`プレイヤー ${player.name} が大きく移動したため、周囲をスキャン (${Math.floor(distance)}ブロック)`, "ItemTransportManager");
                         
                         // 大移動後は全体を再スキャン
                         this.scanAroundPlayer(player);
@@ -993,7 +994,7 @@ export class ItemTransportManager {
                                     // 隣接インベントリを確認
                                     for (const adj of adjacents) {
                                         if (adj && itemPipeSystem.hasInventory(adj)) {
-                                            Logger.info(`新しい出力パイプを検出: ${adj.typeId}に接続 at ${pipeKey}`, "ItemTransportManager");
+                                            Logger.debug(`新しい出力パイプを検出: ${adj.typeId}に接続 at ${pipeKey}`, "ItemTransportManager");
                                             break;
                                         }
                                     }
@@ -1264,7 +1265,7 @@ export class ItemTransportManager {
             }
             
             if (restoredCount > 0) {
-                Logger.info(`旧形式データから${restoredCount}個の輸送中アイテムを復元`, "ItemTransportManager");
+                Logger.debug(`旧形式データから${restoredCount}個の輸送中アイテムを復元`, "ItemTransportManager");
             }
         } catch (error) {
             Logger.warn(`旧形式データの復元に失敗: ${error}`, "ItemTransportManager");

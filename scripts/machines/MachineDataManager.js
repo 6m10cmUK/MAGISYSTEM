@@ -18,7 +18,7 @@ export class MachineDataManager {
             phase3: 200   // 10秒後
         };
         
-        Logger.info("機械データ管理システムを初期化", "MachineDataManager");
+        Logger.debug("機械データ管理システムを初期化", "MachineDataManager");
     }
 
     /**
@@ -28,7 +28,7 @@ export class MachineDataManager {
      */
     registerMachine(machineType, machineInstance) {
         this.machines.set(machineType, machineInstance);
-        Logger.info(`機械タイプ ${machineType} を登録`, "MachineDataManager");
+        Logger.debug(`機械タイプ ${machineType} を登録`, "MachineDataManager");
     }
 
     /**
@@ -43,7 +43,7 @@ export class MachineDataManager {
         }
 
         this.isInitialized = true;
-        Logger.info("機械データ管理システムを開始", "MachineDataManager");
+        Logger.debug("機械データ管理システムを開始", "MachineDataManager");
 
         // 段階的に復元を実行
         this.phaseRestoration();
@@ -94,7 +94,7 @@ export class MachineDataManager {
                 }
             }
 
-            Logger.info(`${machineProps.size}個の機械データプロパティを検出`, "MachineDataManager");
+            Logger.debug(`${machineProps.size}個の機械データプロパティを検出`, "MachineDataManager");
 
             // 各機械タイプに通知
             for (const [key, data] of machineProps) {
@@ -155,7 +155,7 @@ export class MachineDataManager {
      */
     restoreAllMachineData() {
         try {
-            Logger.info("すべての機械データを復元開始", "MachineDataManager");
+            Logger.debug("すべての機械データを復元開始", "MachineDataManager");
             
             // まずDynamic Propertiesをスキャン
             this.scanDynamicProperties();
@@ -228,7 +228,7 @@ export class MachineDataManager {
      */
     reset() {
         this.isInitialized = false;
-        Logger.info("機械データ管理システムをリセット", "MachineDataManager");
+        Logger.debug("機械データ管理システムをリセット", "MachineDataManager");
     }
 }
 

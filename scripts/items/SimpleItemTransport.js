@@ -6,7 +6,9 @@
 import { ItemStack } from "@minecraft/server";
 import { Logger } from "../core/Logger.js";
 import { generator } from "../machines/Generator.js";
+import { electricFurnace } from "../machines/ElectricFurnace.js";
 import { Utils } from "../core/Utils.js";
+import { energySystem } from "../energy/EnergySystem.js";
 
 export class SimpleItemTransport {
     /**
@@ -20,6 +22,16 @@ export class SimpleItemTransport {
             // 熱発電機への輸送の場合
             if (targetBlock.typeId === "magisystem:thermal_generator") {
                 return this.transferToThermalGenerator(sourceBlock, targetBlock);
+            }
+            
+            // 電気炉への輸送の場合
+            if (targetBlock.typeId === "magisystem:electric_furnace") {
+                return this.transferToElectricFurnace(sourceBlock, targetBlock);
+            }
+            
+            // 電気炉からの取り出しの場合
+            if (sourceBlock.typeId === "magisystem:electric_furnace") {
+                return this.transferFromElectricFurnace(sourceBlock, targetBlock);
             }
             
             // インベントリコンポーネントを取得
@@ -100,7 +112,7 @@ export class SimpleItemTransport {
             }
             
             // ラウンドロビン用のインデックスを取得（輸送元の位置をキーとして使用）
-            const sourceKey = `${sourceBlock.location.x}_${sourceBlock.location.y}_${sourceBlock.location.z}`;
+            const sourceKey = Utils.locationToKey(sourceBlock.location);
             if (!this.distributionIndex) {
                 this.distributionIndex = new Map();
             }
@@ -165,7 +177,7 @@ export class SimpleItemTransport {
         
         while (queue.length > 0) {
             const current = queue.shift();
-            const key = `${current.location.x}_${current.location.y}_${current.location.z}`;
+            const key = Utils.locationToKey(current.location);
             
             if (visited.has(key)) continue;
             visited.add(key);
@@ -185,7 +197,7 @@ export class SimpleItemTransport {
             for (const adj of adjacents) {
                 if (!adj) continue;
                 
-                const adjKey = `${adj.location.x}_${adj.location.y}_${adj.location.z}`;
+                const adjKey = Utils.locationToKey(adj.location);
                 
                 // 既に訪問済みならスキップ
                 if (visited.has(adjKey)) continue;
@@ -231,6 +243,12 @@ export class SimpleItemTransport {
                             // 熱発電機の場合も輸送先として追加
                             else if (target.typeId === "magisystem:thermal_generator") {
                                 Logger.debug(`熱発電機を輸送先として追加: ${target.location.x},${target.location.y},${target.location.z}`, "SimpleItemTransport");
+                                destinations.push(target);
+                                hasInventory = true;
+                            }
+                            // 電気炉の場合も輸送先として追加
+                            else if (target.typeId === "magisystem:electric_furnace") {
+                                Logger.debug(`電気炉を輸送先として追加: ${target.location.x},${target.location.y},${target.location.z}`, "SimpleItemTransport");
                                 destinations.push(target);
                                 hasInventory = true;
                             }
@@ -293,7 +311,7 @@ export class SimpleItemTransport {
                     Logger.debug(`tryAddFuel結果: ${addResult}`, "SimpleItemTransport");
                     
                     if (addResult) {
-                        Logger.info(`熱発電機への燃料輸送成功: ${item.typeId}`, "SimpleItemTransport");
+                        Logger.debug(`熱発電機への燃料輸送成功: ${item.typeId}`, "SimpleItemTransport");
                         // 成功したら元のアイテムを減らす
                         if (item.amount > 1) {
                             // 新しいItemStackを作成して数量を減らす
@@ -315,6 +333,171 @@ export class SimpleItemTransport {
             return 0;
         } catch (error) {
             Logger.error(`熱発電機への輸送エラー: ${error}`, "SimpleItemTransport");
+            return 0;
+        }
+    }
+    
+    /**
+     * 電気炉にアイテムを輸送
+     * @param {Block} sourceBlock - 輸送元ブロック
+     * @param {Block} targetBlock - 電気炉ブロック
+     * @returns {number} 輸送したアイテム数
+     */
+    static transferToElectricFurnace(sourceBlock, targetBlock) {
+        try {
+            // まず電気炉が登録されているか確認
+            const key = Utils.locationToKey(targetBlock.location);
+            const machineData = electricFurnace.machines.get(key);
+            
+            if (!machineData) {
+                Logger.debug(`電気炉が未登録: ${key}`, "SimpleItemTransport");
+                // 電気炉を登録
+                const registered = electricFurnace.register(targetBlock);
+                if (!registered) {
+                    return 0;
+                }
+                // 登録後のデータを取得
+                const newData = electricFurnace.machines.get(key);
+                if (!newData) {
+                    Logger.error(`電気炉の登録に失敗`, "SimpleItemTransport");
+                    return 0;
+                }
+            }
+            
+            // 再度データを取得
+            const currentData = electricFurnace.machines.get(key);
+            if (currentData) {
+                Logger.debug(`電気炉データ確認: active=${currentData.active}, smeltTime=${currentData.smeltTime}`, "SimpleItemTransport");
+                if (currentData.smeltTime > 0 || currentData.active) {
+                    // 既に精錬中の場合は輸送しない
+                    Logger.debug(`既に精錬中のため輸送スキップ`, "SimpleItemTransport");
+                    return 0;
+                }
+            }
+            
+            // エネルギーがあるか確認
+            const energy = energySystem.getEnergy(targetBlock);
+            Logger.debug(`電気炉のエネルギー: ${energy} MF`, "SimpleItemTransport");
+            if (energy < 40) { // 2 MF/tick * 20 ticks = 40 MF (最低1秒分)
+                Logger.debug(`エネルギー不足のため輸送スキップ: ${energy} MF`, "SimpleItemTransport");
+                return 0;
+            }
+            
+            // 輸送元のインベントリを取得
+            const sourceInv = sourceBlock.getComponent("minecraft:inventory");
+            if (!sourceInv?.container) {
+                return 0;
+            }
+            
+            const sourceContainer = sourceInv.container;
+            
+            // 精錬可能なアイテムを探す
+            for (let i = 0; i < sourceContainer.size; i++) {
+                const item = sourceContainer.getItem(i);
+                if (!item || item.amount <= 0) continue;
+                
+                // 精錬可能かチェック
+                const smeltResult = electricFurnace.getSmeltResult(item.typeId);
+                Logger.debug(`アイテム ${item.typeId} の精錬結果: ${smeltResult}`, "SimpleItemTransport");
+                
+                if (smeltResult) {
+                    // 1個だけ取り出して電気炉に供給
+                    Logger.debug(`精錬アイテム追加を試行: ${item.typeId} (元の数量: ${item.amount})`, "SimpleItemTransport");
+                    const addResult = electricFurnace.tryAddSmeltItem(targetBlock, item.typeId);
+                    Logger.debug(`tryAddSmeltItem結果: ${addResult}`, "SimpleItemTransport");
+                    
+                    if (addResult) {
+                        Logger.debug(`電気炉への精錬アイテム輸送成功: ${item.typeId}`, "SimpleItemTransport");
+                        // 成功したら元のアイテムを減らす
+                        if (item.amount > 1) {
+                            // 新しいItemStackを作成して数量を減らす
+                            const newItem = new ItemStack(item.typeId, item.amount - 1);
+                            sourceContainer.setItem(i, newItem);
+                            Logger.debug(`アイテム数を減らしました: ${item.typeId} 残り${newItem.amount}`, "SimpleItemTransport");
+                        } else {
+                            sourceContainer.setItem(i, undefined);
+                            Logger.debug(`アイテムを完全に削除しました: ${item.typeId}`, "SimpleItemTransport");
+                        }
+                        
+                        return 1;
+                    } else {
+                        Logger.debug(`tryAddSmeltItemが失敗しました`, "SimpleItemTransport");
+                    }
+                }
+            }
+            
+            return 0;
+        } catch (error) {
+            Logger.error(`電気炉への輸送エラー: ${error}`, "SimpleItemTransport");
+            return 0;
+        }
+    }
+    
+    /**
+     * 電気炉からアイテムを取り出し
+     * @param {Block} sourceBlock - 電気炉ブロック
+     * @param {Block} targetBlock - 輸送先ブロック
+     * @returns {number} 輸送したアイテム数
+     */
+    static transferFromElectricFurnace(sourceBlock, targetBlock) {
+        try {
+            Logger.debug(`電気炉からの取り出し開始`, "SimpleItemTransport");
+            
+            // バッファからアイテムを取得
+            const extractedItem = electricFurnace.extractFromOutputBuffer(sourceBlock);
+            if (!extractedItem) {
+                Logger.debug(`電気炉のバッファが空です`, "SimpleItemTransport");
+                return 0;
+            }
+            
+            // 輸送先のインベントリを取得
+            const targetInv = targetBlock.getComponent("minecraft:inventory");
+            if (!targetInv?.container) {
+                // アイテムをバッファに戻す
+                const key = Utils.locationToKey(sourceBlock.location);
+                const bufferedItems = electricFurnace.outputBuffer.get(key) || [];
+                bufferedItems.unshift(extractedItem);
+                electricFurnace.outputBuffer.set(key, bufferedItems);
+                return 0;
+            }
+            
+            const targetContainer = targetInv.container;
+            
+            // 同じアイテムのスタックを探す
+            let transferred = false;
+            for (let j = 0; j < targetContainer.size; j++) {
+                const targetItem = targetContainer.getItem(j);
+                
+                // 空きスロットの場合
+                if (!targetItem) {
+                    targetContainer.setItem(j, extractedItem);
+                    transferred = true;
+                    break;
+                }
+                
+                // 同じアイテムでスタック可能な場合
+                if (targetItem.typeId === extractedItem.typeId && targetItem.amount < (targetItem.maxAmount || 64)) {
+                    targetItem.amount += extractedItem.amount;
+                    targetContainer.setItem(j, targetItem);
+                    transferred = true;
+                    break;
+                }
+            }
+            
+            if (transferred) {
+                Logger.debug(`電気炉から取り出し成功: ${extractedItem.typeId} x${extractedItem.amount}`, "SimpleItemTransport");
+                return extractedItem.amount;
+            } else {
+                // 転送失敗したらバッファに戻す
+                const key = Utils.locationToKey(sourceBlock.location);
+                const bufferedItems = electricFurnace.outputBuffer.get(key) || [];
+                bufferedItems.unshift(extractedItem);
+                electricFurnace.outputBuffer.set(key, bufferedItems);
+                Logger.debug(`転送先が満杯のため、アイテムをバッファに戻しました`, "SimpleItemTransport");
+                return 0;
+            }
+        } catch (error) {
+            Logger.error(`電気炉からの取り出しエラー: ${error}`, "SimpleItemTransport");
             return 0;
         }
     }

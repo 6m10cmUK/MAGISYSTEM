@@ -34,6 +34,9 @@ export class ElectricFurnace extends BaseMachine {
         
         // Dynamic Properties用のキー
         this.SMELT_DATA_KEY = 'magisystem:smelt_data';
+        
+        // 出力バッファ（パイプ連携用）
+        this.outputBuffer = new Map();
     }
 
     /**
@@ -46,14 +49,23 @@ export class ElectricFurnace extends BaseMachine {
             const key = energySystem.getLocationKey(block.location);
             const machineData = self.machines.get(key);
             
-            if (!machineData) return;
+            if (!machineData) {
+                Logger.debug(`電気炉データが見つかりません: ${key}`, "ElectricFurnace");
+                return;
+            }
+            
+            // デバッグ情報を出力（初回のみ）
+            if (machineData.smeltTime > 0 && machineData.smeltTime === self.SMELT_TIME) {
+                Logger.debug(`電気炉更新開始: active=${machineData.active}, smeltTime=${machineData.smeltTime}, inputItem=${machineData.inputItem}`, "ElectricFurnace");
+            }
 
             // 入力/出力インベントリの取得
             const inputInventory = self.getInputInventory(block);
             const outputInventory = self.getOutputInventory(block);
 
-            if (!inputInventory) {
-                // 入力インベントリがない場合は動作停止
+            // パイプ経由で精錬中の場合は入力インベントリがなくても継続
+            if (!inputInventory && machineData.smeltTime === 0) {
+                // 入力インベントリがなく、精錬中でもない場合は動作停止
                 if (machineData.active) {
                     self.stopSmelting(block, machineData);
                 }
@@ -62,18 +74,27 @@ export class ElectricFurnace extends BaseMachine {
 
             // 精錬中の処理
             if (machineData.smeltTime > 0) {
+                // 精錬中は必ずactiveにする
+                if (!machineData.active) {
+                    machineData.active = true;
+                    Logger.debug(`電気炉のactiveフラグをtrueに修正`, "ElectricFurnace");
+                }
+                
                 const energy = energySystem.getEnergy(block) || 0;
+                Logger.debug(`電気炉精錬更新: smeltTime=${machineData.smeltTime}, energy=${energy} MF, active=${machineData.active}`, "ElectricFurnace");
                 
                 if (energy >= self.ENERGY_PER_TICK * 20) {
                     // エネルギーを消費して精錬を進める（20tick分）
                     energySystem.removeEnergy(block, self.ENERGY_PER_TICK * 20);
                     machineData.smeltTime -= 20;
+                    Logger.debug(`精錬進行: 残り${machineData.smeltTime}tick`, "ElectricFurnace");
 
                     // 進捗の更新
                     self.updateSmeltProgress(block, machineData);
 
                     // 精錬完了
                     if (machineData.smeltTime <= 0) {
+                        Logger.debug(`精錬完了処理を開始`, "ElectricFurnace");
                         self.completeSmelt(block, machineData, outputInventory);
                         // 完了後すぐに次の精錬を試行
                         self.tryStartSmelt(block, machineData, inputInventory, outputInventory);
@@ -127,6 +148,31 @@ export class ElectricFurnace extends BaseMachine {
     }
 
     /**
+     * 隣接する出力パイプがあるかチェック
+     * @param {Block} block
+     * @returns {boolean}
+     */
+    hasAdjacentOutputPipe(block) {
+        const adjacents = [
+            block.above(),
+            block.below(),
+            block.north(),
+            block.south(),
+            block.east(),
+            block.west()
+        ];
+
+        for (const adj of adjacents) {
+            if (adj && adj.typeId === "magisystem:pipe_output") {
+                Logger.debug(`電気炉に隣接する出力パイプを発見: ${Utils.locationToKey(adj.location)}`, "ElectricFurnace");
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * 精錬を開始
      * @param {Block} block 
      * @param {Object} machineData 
@@ -134,6 +180,9 @@ export class ElectricFurnace extends BaseMachine {
      * @param {EntityInventoryComponent} outputInventory 
      */
     tryStartSmelt(block, machineData, inputInventory, outputInventory) {
+        // 入力インベントリがない場合はスキップ
+        if (!inputInventory) return;
+        
         const container = inputInventory.container;
         if (!container || container.emptySlotsCount === container.size) return;
 
@@ -160,11 +209,11 @@ export class ElectricFurnace extends BaseMachine {
             machineData.maxSmeltTime = this.SMELT_TIME;
             machineData.active = true;
 
-            Logger.info(`精錬開始: ${item.typeId} → ${smeltResult}`, "ElectricFurnace");
+            Logger.debug(`精錬開始: ${item.typeId} → ${smeltResult}`, "ElectricFurnace");
             
             // すぐにデータを保存
             this.saveSmeltData(block, machineData);
-            Logger.info(`精錬データを保存しました`, "ElectricFurnace");
+            Logger.debug(`精錬データを保存しました`, "ElectricFurnace");
             return;
         }
     }
@@ -237,6 +286,9 @@ export class ElectricFurnace extends BaseMachine {
      * @returns {boolean}
      */
     canOutputItem(outputInventory, itemId) {
+        // 出力インベントリがない場合はfalse
+        if (!outputInventory) return false;
+        
         const container = outputInventory.container;
         if (!container) return false;
 
@@ -255,6 +307,105 @@ export class ElectricFurnace extends BaseMachine {
     }
 
     /**
+     * 出力バッファからアイテムを取得（パイプシステム用）
+     * @param {Block} block
+     * @returns {ItemStack|null}
+     */
+    extractFromOutputBuffer(block) {
+        const key = Utils.locationToKey(block.location);
+        const bufferedItems = this.outputBuffer.get(key) || [];
+        
+        if (bufferedItems.length > 0) {
+            const item = bufferedItems.shift();
+            if (bufferedItems.length === 0) {
+                this.outputBuffer.delete(key);
+            } else {
+                this.outputBuffer.set(key, bufferedItems);
+            }
+            Logger.debug(`バッファからアイテムを取り出し: ${item.typeId}`, "ElectricFurnace");
+            return item;
+        }
+        
+        return null;
+    }
+
+    /**
+     * インベントリコンポーネントを取得（パイプシステム用）
+     * @param {Block} block
+     * @returns {Object} 仮想インベントリコンポーネント
+     */
+    getInventoryComponent(block) {
+        const self = this;
+        const key = Utils.locationToKey(block.location);
+        
+        return {
+            container: {
+                size: 2, // 入力1、出力1
+                
+                // アイテムを取得
+                getItem(slot) {
+                    if (slot === 0) {
+                        // 入力スロット（未実装）
+                        return null;
+                    } else if (slot === 1) {
+                        // 出力スロット（バッファから）
+                        const bufferedItems = self.outputBuffer.get(key) || [];
+                        if (bufferedItems.length > 0) {
+                            return bufferedItems[0];
+                        }
+                    }
+                    return null;
+                },
+                
+                // アイテムを設定（パイプからの入力用）
+                setItem(slot, itemStack) {
+                    if (slot === 0 && itemStack) {
+                        // 入力スロットに設定（精錬可能かチェック）
+                        const smeltResult = self.getSmeltResult(itemStack.typeId);
+                        if (smeltResult) {
+                            // 精錬可能なアイテムなら受け入れる
+                            const machineData = self.machines.get(key);
+                            if (machineData && !machineData.active) {
+                                // 精錬を開始
+                                machineData.inputItem = itemStack.typeId;
+                                machineData.outputItem = smeltResult;
+                                machineData.smeltTime = self.SMELT_TIME;
+                                machineData.maxSmeltTime = self.SMELT_TIME;
+                                machineData.active = true;
+                                Logger.info(`パイプから精錬開始: ${itemStack.typeId} → ${smeltResult}`, "ElectricFurnace");
+                                self.saveSmeltData(block, machineData);
+                                return true;
+                            }
+                        }
+                    } else if (slot === 1 && !itemStack) {
+                        // 出力スロットからアイテムを取り出し
+                        return self.extractFromOutputBuffer(block);
+                    }
+                    return false;
+                },
+                
+                // 空きスロット数
+                get emptySlotsCount() {
+                    const machineData = self.machines.get(key);
+                    return machineData && !machineData.active ? 1 : 0;
+                },
+                
+                // アイテムを追加可能かチェック（パイプシステム用）
+                canAddItem(itemStack) {
+                    const machineData = self.machines.get(key);
+                    // 精錬中の場合は受け入れない
+                    if (machineData && machineData.active) {
+                        return false;
+                    }
+                    // 精錬可能なアイテムかチェック
+                    const smeltResult = self.getSmeltResult(itemStack.typeId);
+                    return smeltResult !== null;
+                }
+            }
+        };
+    }
+
+    /**
      * 精錬完了処理
      * @param {Block} block 
      * @param {Object} machineData 
@@ -264,26 +415,34 @@ export class ElectricFurnace extends BaseMachine {
         const outputItem = new ItemStack(machineData.outputItem, 1);
         let outputSuccess = false;
 
+        // まず下のチェストに出力を試みる
         if (outputInventory) {
-            // 出力インベントリに追加を試みる
             const container = outputInventory.container;
             if (container) {
-                // インベントリが満杯かチェック
                 if (this.canOutputItem(outputInventory, machineData.outputItem)) {
                     container.addItem(outputItem);
                     Logger.debug(`精錬完了: ${machineData.outputItem}を出力インベントリに追加`, "ElectricFurnace");
                     outputSuccess = true;
                 } else {
-                    Logger.debug(`出力インベントリが満杯のため、アイテムをドロップします`, "ElectricFurnace");
+                    Logger.debug(`出力インベントリが満杯`, "ElectricFurnace");
                 }
             }
         }
         
-        // 出力できなかった場合は正面にドロップ
+        // 出力できなかった場合、隣接する出力パイプがあるかチェック
+        if (!outputSuccess && this.hasAdjacentOutputPipe(block)) {
+            // バッファに追加（アイテムパイプシステムが後で取得）
+            const key = Utils.locationToKey(block.location);
+            const bufferedItems = this.outputBuffer.get(key) || [];
+            bufferedItems.push(outputItem);
+            this.outputBuffer.set(key, bufferedItems);
+            Logger.debug(`精錬完了: ${machineData.outputItem}を出力バッファに追加`, "ElectricFurnace");
+            outputSuccess = true;
+        }
+        
+        // どちらもない場合は正面にドロップ
         if (!outputSuccess) {
             const direction = block.permutation.getState('minecraft:cardinal_direction');
-            // Minecraftのcardinal_directionは設置時のプレイヤーの向きの反対を向く
-            // そのため、ブロックの「正面」にドロップするには反対方向を使う
             const oppositeDirections = {
                 'north': 'south',
                 'south': 'north',
@@ -302,6 +461,7 @@ export class ElectricFurnace extends BaseMachine {
         machineData.smeltTime = 0;
         machineData.maxSmeltTime = 0;
         machineData.active = false;
+        Logger.debug(`電気炉データをリセット: active=${machineData.active}, smeltTime=${machineData.smeltTime}`, "ElectricFurnace");
     }
 
     /**
@@ -384,7 +544,7 @@ export class ElectricFurnace extends BaseMachine {
         const self = this;
         return ErrorHandler.safeTry(() => {
             const key = energySystem.getLocationKey(block.location);
-            Logger.info(`電気炉復元開始: ${key}`, "ElectricFurnace");
+            Logger.debug(`電気炉復元開始: ${key}`, "ElectricFurnace");
             
             const machineData = self.machines.get(key);
             if (!machineData) {
@@ -395,7 +555,7 @@ export class ElectricFurnace extends BaseMachine {
             // 統一的なデータ管理システムから取得
             const smeltData = machineDataManager.getMachineData(key, 'smelt');
             
-            Logger.info(`保存データ確認: ${smeltData ? '有り' : '無し'}`, "ElectricFurnace");
+            Logger.debug(`保存データ確認: ${smeltData ? '有り' : '無し'}`, "ElectricFurnace");
             
             if (smeltData) {
                 machineData.smeltTime = smeltData.smeltTime;
@@ -404,7 +564,7 @@ export class ElectricFurnace extends BaseMachine {
                 machineData.outputItem = smeltData.outputItem;
                 machineData.active = true;
 
-                Logger.info(`精錬状態を復元: ${smeltData.inputItem} → ${smeltData.outputItem} (残り${smeltData.smeltTime}tick)`, "ElectricFurnace");
+                Logger.debug(`精錬状態を復元: ${smeltData.inputItem} → ${smeltData.outputItem} (残り${smeltData.smeltTime}tick)`, "ElectricFurnace");
 
                 // 視覚状態も更新
                 self.updateVisualState(block, true);
@@ -425,6 +585,74 @@ export class ElectricFurnace extends BaseMachine {
      */
     canHandleBlock(block) {
         return block.typeId === Constants.BLOCK_TYPES.ELECTRIC_FURNACE;
+    }
+    
+    /**
+     * アイテムを精錬として追加を試みる（熱発電機のtryAddFuelと同様）
+     * @param {Block} block 
+     * @param {string} itemTypeId
+     * @returns {boolean} 成功したかどうか
+     */
+    tryAddSmeltItem(block, itemTypeId) {
+        const self = this;
+        return ErrorHandler.safeTry(() => {
+            const key = energySystem.getLocationKey(block.location);
+            const machineData = self.machines.get(key);
+            
+            if (!machineData) {
+                Logger.debug(`電気炉が登録されていません: ${key}`, "ElectricFurnace");
+                return false;
+            }
+            
+            // 既に精錬中の場合は追加できない
+            if (machineData.active || machineData.smeltTime > 0) {
+                Logger.debug(`電気炉は既に精錬中です: active=${machineData.active}, smeltTime=${machineData.smeltTime}`, "ElectricFurnace");
+                return false;
+            }
+            
+            // 精錬可能かチェック
+            const smeltResult = self.getSmeltResult(itemTypeId);
+            if (!smeltResult) {
+                Logger.debug(`${itemTypeId}は精錬できません`, "ElectricFurnace");
+                return false;
+            }
+            
+            // 精錬開始
+            machineData.inputItem = itemTypeId;
+            machineData.outputItem = smeltResult;
+            machineData.smeltTime = self.SMELT_TIME;
+            machineData.maxSmeltTime = self.SMELT_TIME;
+            machineData.active = true;
+            
+            Logger.debug(`精錬開始（パイプ経由）: ${itemTypeId} → ${smeltResult}`, "ElectricFurnace");
+            
+            // データを保存
+            self.saveSmeltData(block, machineData);
+            
+            // 視覚状態を即座に更新
+            self.updateVisualState(block, true);
+            self.updateSmeltProgress(block, machineData);
+            
+            // エネルギーシステムに登録されているか確認
+            const currentEnergy = energySystem.getEnergy(block);
+            Logger.debug(`電気炉のエネルギー: ${currentEnergy} MF`, "ElectricFurnace");
+            
+            // machinesマップの確認
+            Logger.debug(`電気炉machines確認: key=${key}, active=${machineData.active}, smeltTime=${machineData.smeltTime}`, "ElectricFurnace");
+            
+            // 即座に更新処理を実行（次のtickを待たずに）
+            system.runTimeout(() => {
+                const blockExists = block.dimension.getBlock(block.location);
+                if (blockExists && blockExists.typeId === Constants.BLOCK_TYPES.ELECTRIC_FURNACE) {
+                    Logger.debug(`電気炉ブロック確認OK、更新を実行`, "ElectricFurnace");
+                    self.update(blockExists);
+                } else {
+                    Logger.error(`電気炉ブロックが見つかりません: ${key}`, "ElectricFurnace");
+                }
+            }, 1);
+            
+            return true;
+        }, "ElectricFurnace.tryAddSmeltItem", false);
     }
 
     cleanup(location, dimension) {

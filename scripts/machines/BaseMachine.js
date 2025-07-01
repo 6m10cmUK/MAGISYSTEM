@@ -3,6 +3,7 @@ import { energySystem } from "../energy/EnergySystem.js";
 import { ErrorHandler } from "../core/ErrorHandler.js";
 import { BlockUtils } from "../utils/BlockUtils.js";
 import { Constants } from "../core/Constants.js";
+import { Logger } from "../core/Logger.js";
 
 /**
  * すべての機械の基底クラス
@@ -25,9 +26,12 @@ export class BaseMachine {
     register(block, additionalData = {}) {
         return ErrorHandler.safeTry(() => {
             const key = energySystem.getLocationKey(block.location);
+            Logger.debug(`[BaseMachine] ${this.machineType}を登録: ${key}`, "BaseMachine");
+            
             const data = { ...this.defaultData, ...additionalData };
             
             this.machines.set(key, data);
+            Logger.debug(`[BaseMachine] データ登録完了 - machines.size: ${this.machines.size}`, "BaseMachine");
             
             // エネルギーシステムに登録
             const currentEnergy = energySystem.getEnergy(block) || 0;

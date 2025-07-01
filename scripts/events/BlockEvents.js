@@ -28,6 +28,7 @@ export class BlockEvents extends BaseEventHandler {
             [Constants.BLOCK_TYPES.GENERATOR, this.handleGeneratorPlace.bind(this)],
             [Constants.BLOCK_TYPES.THERMAL_GENERATOR, this.handleGeneratorPlace.bind(this)],
             [Constants.BLOCK_TYPES.CREATIVE_GENERATOR, this.handleCreativeGeneratorPlace.bind(this)],
+            [Constants.BLOCK_TYPES.ELECTRIC_FURNACE, this.handleElectricFurnacePlace.bind(this)],
             [Constants.BLOCK_TYPES.CABLE, this.handleCablePlace.bind(this)],
             [Constants.BLOCK_TYPES.CABLE_INPUT, this.handleCablePlace.bind(this)],
             [Constants.BLOCK_TYPES.CABLE_OUTPUT, this.handleCablePlace.bind(this)],
@@ -147,7 +148,8 @@ export class BlockEvents extends BaseEventHandler {
         // インベントリブロックの場合、隣接するパイプを更新
         const inventory = brokenBlockPermutation.getComponent?.("minecraft:inventory");
         if (inventory || itemPipeSystem.inventoryBlocks.has(typeId) || 
-            typeId === Constants.BLOCK_TYPES.THERMAL_GENERATOR) {
+            typeId === Constants.BLOCK_TYPES.THERMAL_GENERATOR ||
+            typeId === Constants.BLOCK_TYPES.ELECTRIC_FURNACE) {
             this.updateAdjacentPipesAtLocation(location, dimension);
         }
     }
@@ -225,7 +227,18 @@ export class BlockEvents extends BaseEventHandler {
     }
 
     handleElectricFurnacePlace(block, player) {
-        this.handleMachinePlace(block, player, electricFurnace, "電気炉");
+        // 電気炉を登録
+        const result = electricFurnace.register(block);
+        Logger.info(`電気炉登録結果: ${result}, 位置: ${Utils.locationToKey(block.location)}`, "BlockEvents");
+        
+        // エネルギーシステムにも初期値を設定（電気炉はエネルギーを使用）
+        const initialEnergy = 0;
+        energySystem.setEnergy(block, initialEnergy);
+        Logger.info(`電気炉のエネルギーを初期化: ${initialEnergy} MF`, "BlockEvents");
+        
+        BlockUtils.playSound(block, Constants.SOUNDS.BLOCK_PLACE, { volume: 0.8 });
+        mfCableSystem.updateAdjacentBlocks(block);
+        this.sendDebugMessage(player, `電気炉を配置: ${Utils.locationToKey(block.location)}`);
         
         // 隣接するパイプを更新（アイテム輸送のため）
         this.updateAdjacentPipes(block);
