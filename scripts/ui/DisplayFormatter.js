@@ -18,7 +18,16 @@ export class DisplayFormatter {
         switch (info.type) {
             case "energy":
                 if (info.data.isActive !== undefined) {
-                    if (info.data.isActive && info.data.generationRate) {
+                    // ゼーベック発電機の場合
+                    if (info.data.requiresLavaAndWater) {
+                        if (info.data.isActive) {
+                            parts.push(`§7状態: §a発電中 (${info.data.generationRate} MF/s)`);
+                        } else {
+                            parts.push(`§7状態: §c停止中 (溶岩と水が必要)`);
+                        }
+                    }
+                    // その他の発電機
+                    else if (info.data.isActive && info.data.generationRate) {
                         parts.push(`§7発電: §a${info.data.generationRate} MF/s`);
                     }
                     // 電気炉の場合

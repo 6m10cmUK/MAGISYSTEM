@@ -16,6 +16,15 @@
                 "explosion_resistance": 30
             },
             "minecraft:light_emission": 8,
+            "minecraft:geometry": {
+                "identifier": "minecraft:geometry.full_block"
+            },
+            "minecraft:material_instances": {
+                "*": {
+                    "texture": "lapis_block",
+                    "render_method": "opaque"
+                }
+            },
             "minecraft:loot": "loot_tables/blocks/seebeck_generator.json"
         }
     }
