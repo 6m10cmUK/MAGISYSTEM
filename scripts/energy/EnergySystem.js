@@ -132,7 +132,7 @@ export class EnergySystem {
             [Constants.BLOCK_TYPES.BATTERY_BASIC]: 50000,
             [Constants.BLOCK_TYPES.BATTERY_ADVANCED]: 200000,
             [Constants.BLOCK_TYPES.BATTERY_ULTIMATE]: 1000000,
-            [Constants.BLOCK_TYPES.ELECTRIC_FURNACE]: 10000  // 電気炉（250秒分の使用量）
+            [Constants.BLOCK_TYPES.ELECTRIC_FURNACE]: Constants.ELECTRIC_FURNACE.CAPACITY
         };
         
         return capacities[typeId] || 0;

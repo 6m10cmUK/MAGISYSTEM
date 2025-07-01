@@ -23,14 +23,14 @@ export class ElectricFurnace extends BaseMachine {
                 outputItem: null,
                 active: false
             },
-            capacity: 10000, // 10,000 MF
+            capacity: Constants.ELECTRIC_FURNACE.CAPACITY,
             soundOnPlace: Constants.SOUNDS.BLOCK_PLACE
         });
 
         // 定数
-        this.ENERGY_PER_TICK = 2; // 2 MF/tick (40 MF/s)
-        this.SMELT_TIME = 133; // バニラの1.5倍速 (200tick → 133tick)
-        this.STACK_LIMIT = 64;
+        this.ENERGY_PER_TICK = Constants.ELECTRIC_FURNACE.ENERGY_PER_TICK;
+        this.SMELT_TIME = Constants.ELECTRIC_FURNACE.SMELT_TIME;
+        this.STACK_LIMIT = Constants.ELECTRIC_FURNACE.STACK_LIMIT;
         
         // Dynamic Properties用のキー
         this.SMELT_DATA_KEY = 'magisystem:smelt_data';
@@ -461,6 +461,10 @@ export class ElectricFurnace extends BaseMachine {
         machineData.smeltTime = 0;
         machineData.maxSmeltTime = 0;
         machineData.active = false;
+        
+        // 進捗状態も0にリセット
+        this.updateSmeltProgress(block, machineData);
+        
         Logger.debug(`電気炉データをリセット: active=${machineData.active}, smeltTime=${machineData.smeltTime}`, "ElectricFurnace");
     }
 

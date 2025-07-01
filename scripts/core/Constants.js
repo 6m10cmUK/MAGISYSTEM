@@ -70,11 +70,13 @@ export const Constants = {
 
     // 発電機設定
     GENERATOR: {
-        BASE_OUTPUT: 10, // MF/tick
+        BASE_OUTPUT: 10, // MF/tick (未使用)
         FUEL_MULTIPLIER: 1,
+        THERMAL_OUTPUT: 20, // MF/tick (熱発電機)
+        CREATIVE_OUTPUT: 100, // MF/tick (クリエイティブ発電機)
         SOLAR_OUTPUT_DAY: 5, // MF/tick
         SOLAR_OUTPUT_NIGHT: 0, // MF/tick
-        SEEBECK_OUTPUT: 60, // MF/tick
+        SEEBECK_OUTPUT: 15, // MF/tick
         SEEBECK_CAPACITY: 10000, // MF
     },
 
@@ -91,6 +93,22 @@ export const Constants = {
         TRANSFER_COOLDOWN: 8, // tick
         MAX_STACK_SIZE: 64,
         CHECK_INTERVAL: 20, // tick
+    },
+
+    // 電気炉設定
+    ELECTRIC_FURNACE: {
+        ENERGY_PER_TICK: 2, // MF/tick (40 MF/s)
+        SMELT_TIME: 133, // tick (バニラの1.5倍速)
+        CAPACITY: 10000, // MF
+        STACK_LIMIT: 64,
+    },
+
+    // ブロック状態名
+    BLOCK_STATES: {
+        ACTIVE: 'magisystem:active',
+        SMELT_PROGRESS: 'magisystem:smelt_progress',
+        BURN_PROGRESS: 'magisystem:burn_progress',
+        CARDINAL_DIRECTION: 'minecraft:cardinal_direction',
     },
 
     // 方向

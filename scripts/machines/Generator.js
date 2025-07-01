@@ -27,7 +27,7 @@ export class Generator extends BaseMachine {
             soundOnPlace: Constants.SOUNDS.BLOCK_PLACE
         });
         
-        this.generationRate = 40; // MF/tick
+        this.generationRate = Constants.GENERATOR.THERMAL_OUTPUT; // MF/tick
         this.testMode = false; // テストモード無効（デフォルト）
     }
 
