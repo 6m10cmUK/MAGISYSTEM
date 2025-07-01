@@ -75,6 +75,8 @@ export class ElectricFurnace extends BaseMachine {
                     // 精錬完了
                     if (machineData.smeltTime <= 0) {
                         self.completeSmelt(block, machineData, outputInventory);
+                        // 完了後すぐに次の精錬を試行
+                        self.tryStartSmelt(block, machineData, inputInventory, outputInventory);
                     }
                 } else {
                     // エネルギー不足で一時停止
@@ -260,20 +262,38 @@ export class ElectricFurnace extends BaseMachine {
      */
     completeSmelt(block, machineData, outputInventory) {
         const outputItem = new ItemStack(machineData.outputItem, 1);
+        let outputSuccess = false;
 
         if (outputInventory) {
-            // 出力インベントリに追加
+            // 出力インベントリに追加を試みる
             const container = outputInventory.container;
             if (container) {
-                container.addItem(outputItem);
-                Logger.debug(`精錬完了: ${machineData.outputItem}を出力インベントリに追加`, "ElectricFurnace");
+                // インベントリが満杯かチェック
+                if (this.canOutputItem(outputInventory, machineData.outputItem)) {
+                    container.addItem(outputItem);
+                    Logger.debug(`精錬完了: ${machineData.outputItem}を出力インベントリに追加`, "ElectricFurnace");
+                    outputSuccess = true;
+                } else {
+                    Logger.debug(`出力インベントリが満杯のため、アイテムをドロップします`, "ElectricFurnace");
+                }
             }
-        } else {
-            // 正面にドロップ
+        }
+        
+        // 出力できなかった場合は正面にドロップ
+        if (!outputSuccess) {
             const direction = block.permutation.getState('minecraft:cardinal_direction');
-            const dropLocation = Utils.getOffsetLocation(block.location, direction, 1);
+            // Minecraftのcardinal_directionは設置時のプレイヤーの向きの反対を向く
+            // そのため、ブロックの「正面」にドロップするには反対方向を使う
+            const oppositeDirections = {
+                'north': 'south',
+                'south': 'north',
+                'east': 'west',
+                'west': 'east'
+            };
+            const frontDirection = oppositeDirections[direction] || direction;
+            const dropLocation = Utils.getOffsetLocation(block.location, frontDirection, 1);
             block.dimension.spawnItem(outputItem, dropLocation);
-            Logger.debug(`精錬完了: ${machineData.outputItem}を正面にドロップ`, "ElectricFurnace");
+            Logger.debug(`精錬完了: ${machineData.outputItem}を正面にドロップ（${frontDirection}方向）`, "ElectricFurnace");
         }
 
         // データリセット
@@ -408,17 +428,28 @@ export class ElectricFurnace extends BaseMachine {
     }
 
     cleanup(location, dimension) {
-        super.unregister(location, dimension);
-        
         // 精錬中のアイテムをドロップ
         const key = energySystem.getLocationKey(location);
         const machineData = this.machines.get(key);
         
         if (machineData && machineData.inputItem && machineData.smeltTime > 0) {
-            // 未完成のアイテムをドロップ
-            const dropItem = new ItemStack(machineData.inputItem, 1);
-            dimension.spawnItem(dropItem, location);
+            try {
+                // 未完成のアイテムをドロップ（ブロックの中心位置に）
+                const dropLocation = {
+                    x: location.x + 0.5,
+                    y: location.y + 0.5,
+                    z: location.z + 0.5
+                };
+                const dropItem = new ItemStack(machineData.inputItem, 1);
+                dimension.spawnItem(dropItem, dropLocation);
+                Logger.info(`精錬中のアイテムをドロップ: ${machineData.inputItem}`, "ElectricFurnace");
+            } catch (error) {
+                Logger.error(`アイテムドロップエラー: ${error}`, "ElectricFurnace");
+            }
         }
+        
+        // 親クラスのクリーンアップを呼び出す
+        super.unregister(location, dimension);
         
         // データをクリア
         machineDataManager.clearMachineData(key, 'smelt');
