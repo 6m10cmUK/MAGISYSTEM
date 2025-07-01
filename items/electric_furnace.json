@@ -2,7 +2,7 @@
   "format_version": "1.21.50",
   "minecraft:item": {
     "description": {
-      "identifier": "magisystem:generator",
+      "identifier": "magisystem:electric_furnace",
       "menu_category": {
         "category": "equipment"
       }
@@ -10,10 +10,10 @@
     "components": {
       "minecraft:max_stack_size": 64,
       "minecraft:display_name": {
-        "value": "発電機"
+        "value": "§b電気炉"
       },
       "minecraft:block_placer": {
-        "block": "magisystem:generator"
+        "block": "magisystem:electric_furnace"
       }
     }
   }

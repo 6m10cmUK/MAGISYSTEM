@@ -54,6 +54,7 @@ export class BlockTypeUtils {
     static isEnergyBlock(typeId) {
         return this.isGenerator(typeId) ||
                this.isBattery(typeId) ||
+               typeId === Constants.BLOCK_TYPES.ELECTRIC_FURNACE ||
                typeId?.includes("energy") || false;
     }
 
@@ -99,7 +100,8 @@ export class BlockTypeUtils {
         return typeId === "minecraft:furnace" ||
                typeId === "minecraft:blast_furnace" ||
                typeId === "minecraft:smoker" ||
-               typeId === "magisystem:iron_furnace";
+               typeId === "magisystem:iron_furnace" ||
+               typeId === Constants.BLOCK_TYPES.ELECTRIC_FURNACE;
     }
 
     /**

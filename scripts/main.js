@@ -4,6 +4,7 @@ import { tickEvents } from "./events/TickEvents.js";
 import { itemPickupEvents } from "./events/ItemPickupEvents.js";
 import { Wrench } from "./tools/Wrench.js";
 import { generator } from "./machines/Generator.js";
+import { electricFurnace } from "./machines/ElectricFurnace.js";
 import { Constants } from "./core/Constants.js";
 import { ErrorHandler } from "./core/ErrorHandler.js";
 import { Logger } from "./core/Logger.js";
@@ -11,6 +12,7 @@ import { energySystem } from "./energy/EnergySystem.js";
 import { itemTransportManager } from "./items/ItemTransportManager.js";
 import { itemPipeSystem } from "./pipes/ItemPipeSystem.js";
 import { Utils } from "./core/Utils.js";
+import { machineDataManager } from "./machines/MachineDataManager.js";
 // import { burnProgressDisplay } from "./ui/BurnProgressDisplay.js";
 
 // 初期化
@@ -38,6 +40,10 @@ class MagisystemMain {
             // エラーハンドリング
             this.registerErrorHandling();
             
+            // 機械データ管理システムに機械を登録
+            machineDataManager.registerMachine('generator', generator);
+            machineDataManager.registerMachine('electricFurnace', electricFurnace);
+            
             // 燃焼進行状況表示システムは削除
             // burnProgressDisplay.initialize();
             
@@ -60,12 +66,33 @@ class MagisystemMain {
             
             // 最初のプレイヤーが参加した時にシステムを開始
             const players = world.getAllPlayers();
-            if (players.length === 1 && !this.systemsInitialized) {
-                Logger.info("最初のプレイヤーが参加 - システムを開始", "Main");
-                // チャンクがロードされるまで少し待つ
-                system.runTimeout(() => {
-                    this.initializeSystems();
-                }, 40); // 2秒待つ
+            if (players.length === 1) {
+                if (!this.systemsInitialized) {
+                    Logger.info("最初のプレイヤーが参加 - システムを開始", "Main");
+                    // チャンクがロードされるまで少し待つ
+                    system.runTimeout(() => {
+                        this.initializeSystems();
+                    }, 40); // 2秒待つ
+                } else {
+                    // すでに初期化済みの場合は機械データの復元のみ実行
+                    Logger.info("システム初期化済み - 機械データのみ復元", "Main");
+                    system.runTimeout(() => {
+                        this.restoreEnergyData();
+                        this.restoreMachineData();
+                    }, 40); // 2秒待つ
+                }
+            }
+        });
+        
+        // プレイヤー退出イベント
+        world.afterEvents.playerLeave.subscribe((event) => {
+            Logger.info(`プレイヤー${event.playerName}が退出しました`, "Main");
+            
+            // 全員退出したらフラグをリセット
+            const players = world.getAllPlayers();
+            if (players.length === 0) {
+                Logger.info("全プレイヤーが退出 - システムフラグをリセット", "Main");
+                this.systemsInitialized = false;
             }
         });
     }
@@ -78,6 +105,9 @@ class MagisystemMain {
             itemTransportManager.start();
         }
         
+        // 機械データ管理システムを開始
+        machineDataManager.start();
+        
         // エネルギーシステムの初期化を確実に実行
         energySystem.initializeScoreboard();
         
@@ -85,6 +115,8 @@ class MagisystemMain {
         system.runTimeout(() => {
             Logger.info("エネルギーデータの復元を開始...", "Main");
             this.restoreEnergyData();
+            // 個別の復元処理は削除（machineDataManagerが管理）
+            // this.restoreMachineData();
         }, 20); // 1秒後
         
         // パイプの見た目を定期的に修正する処理を開始
@@ -114,6 +146,109 @@ class MagisystemMain {
             }
         } catch (error) {
             ErrorHandler.handleError(error, "MagisystemMain.restoreEnergyData");
+        }
+    }
+
+    static restoreMachineData() {
+        try {
+            Logger.info("機械データの復元を開始", "Main");
+            
+            // ワールド内のすべてのディメンションをチェック
+            const dimensions = ["overworld", "nether", "the_end"];
+            
+            for (const dimId of dimensions) {
+                const dimension = world.getDimension(dimId);
+                Logger.info(`ディメンション ${dimId} をチェック中`, "Main");
+                
+                // Dynamic Propertiesから保存された位置情報を取得
+                const properties = world.getDynamicPropertyIds();
+                Logger.info(`Dynamic Properties数: ${properties.length}`, "Main");
+                
+                // 座標形式のプロパティを確認
+                const coordProps = properties.filter(p => p.match(/^-?\d+,-?\d+,-?\d+$/));
+                Logger.info(`座標形式のプロパティ: ${coordProps.join(', ')}`, "Main");
+                
+                let machineCount = 0;
+                for (const prop of properties) {
+                    // 座標形式のプロパティをチェック
+                    if (prop.match(/^-?\d+,-?\d+,-?\d+$/) && world.getDynamicProperty(prop) === dimId) {
+                        machineCount++;
+                        Logger.info(`${dimId}の座標を発見: ${prop}`, "Main");
+                        const [x, y, z] = prop.split(',').map(Number);
+                        const location = { x, y, z };
+                        
+                        try {
+                            const block = dimension.getBlock(location);
+                            if (!block) continue;
+                            
+                            // 発電機の燃焼データ復元
+                            if (block.typeId === Constants.BLOCK_TYPES.GENERATOR || 
+                                block.typeId === Constants.BLOCK_TYPES.THERMAL_GENERATOR) {
+                                // まず発電機を登録
+                                generator.register(block);
+                                // その後、燃焼データを復元
+                                generator.restoreBurnData(block);
+                            }
+                            // 電気炉の精錬データ復元
+                            else if (block.typeId === Constants.BLOCK_TYPES.ELECTRIC_FURNACE) {
+                                Logger.info(`電気炉を発見: ${prop}`, "Main");
+                                // まず電気炉を登録
+                                const registered = electricFurnace.register(block);
+                                Logger.info(`電気炉登録結果: ${registered}`, "Main");
+                                // その後、精錬データを復元
+                                electricFurnace.restoreSmeltData(block);
+                            }
+                        } catch (error) {
+                            // ブロックが取得できない場合は無視
+                            Logger.debug(`ブロック復元スキップ: ${prop}`, "Main");
+                        }
+                    }
+                }
+                Logger.info(`${dimId}で${machineCount}個の機械を検出`, "Main");
+            }
+            
+            // 精錬データが保存されているかも確認
+            const allProperties = world.getDynamicPropertyIds();
+            const smeltProperties = allProperties.filter(p => p.startsWith('smelt_'));
+            Logger.info(`精錬データプロパティ数: ${smeltProperties.length}`, "Main");
+            
+            // 精錬データから電気炉を復元
+            for (const prop of smeltProperties) {
+                const data = world.getDynamicProperty(prop);
+                Logger.info(`${prop}: ${data}`, "Main");
+                
+                if (data) {
+                    // smelt_x,y,z から座標を取得
+                    const coords = prop.replace('smelt_', '');
+                    const [x, y, z] = coords.split(',').map(Number);
+                    const location = { x, y, z };
+                    
+                    try {
+                        // 全ディメンションで電気炉を探す
+                        for (const dimId of dimensions) {
+                            const dimension = world.getDimension(dimId);
+                            const block = dimension.getBlock(location);
+                            
+                            if (block && block.typeId === Constants.BLOCK_TYPES.ELECTRIC_FURNACE) {
+                                Logger.info(`電気炉を発見（精錬データから）: ${coords} in ${dimId}`, "Main");
+                                
+                                // まず電気炉を登録
+                                const registered = electricFurnace.register(block);
+                                Logger.info(`電気炉登録結果: ${registered}`, "Main");
+                                
+                                // その後、精錬データを復元
+                                electricFurnace.restoreSmeltData(block);
+                                break;
+                            }
+                        }
+                    } catch (error) {
+                        Logger.debug(`精錬データ復元エラー: ${prop} - ${error}`, "Main");
+                    }
+                }
+            }
+            
+        } catch (error) {
+            ErrorHandler.handleError(error, "MagisystemMain.restoreMachineData");
         }
     }
 

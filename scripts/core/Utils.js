@@ -90,6 +90,32 @@ export class Utils {
     }
 
     /**
+     * 指定方向にオフセットした位置を取得
+     * @param {Location} location 基準位置
+     * @param {string} direction 方向 ('north', 'south', 'east', 'west', 'up', 'down')
+     * @param {number} distance 距離
+     * @returns {Location}
+     */
+    static getOffsetLocation(location, direction, distance = 1) {
+        const offsets = {
+            'north': { x: 0, y: 0, z: -distance },
+            'south': { x: 0, y: 0, z: distance },
+            'east': { x: distance, y: 0, z: 0 },
+            'west': { x: -distance, y: 0, z: 0 },
+            'up': { x: 0, y: distance, z: 0 },
+            'down': { x: 0, y: -distance, z: 0 }
+        };
+
+        const offset = offsets[direction] || { x: 0, y: 0, z: 0 };
+        
+        return {
+            x: location.x + offset.x,
+            y: location.y + offset.y,
+            z: location.z + offset.z
+        };
+    }
+
+    /**
      * 遅延実行（tick単位）
      * @param {Function} callback 
      * @param {number} ticks 

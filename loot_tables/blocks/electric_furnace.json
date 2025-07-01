@@ -5,7 +5,8 @@
       "entries": [
         {
           "type": "item",
-          "name": "magisystem:iron_furnace"
+          "name": "magisystem:electric_furnace",
+          "weight": 1
         }
       ]
     }

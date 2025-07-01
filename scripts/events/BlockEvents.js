@@ -9,6 +9,7 @@ import { energySystem } from "../energy/EnergySystem.js";
 import { generator } from "../machines/Generator.js";
 import { creativeGenerator } from "../machines/CreativeGenerator.js";
 import { battery } from "../machines/Battery.js";
+import { electricFurnace } from "../machines/ElectricFurnace.js";
 import { mfCableSystem } from "../cables/MFCableSystem.js";
 import { itemPipeSystem } from "../pipes/ItemPipeSystem.js";
 import { itemTransportManager } from "../items/ItemTransportManager.js";
@@ -33,6 +34,7 @@ export class BlockEvents extends BaseEventHandler {
             [Constants.BLOCK_TYPES.PIPE, this.handlePipePlace.bind(this)],
             [Constants.BLOCK_TYPES.PIPE_INPUT, this.handlePipePlace.bind(this)],
             [Constants.BLOCK_TYPES.PIPE_OUTPUT, this.handlePipePlace.bind(this)],
+            [Constants.BLOCK_TYPES.ELECTRIC_FURNACE, this.handleElectricFurnacePlace.bind(this)],
         ]);
     }
 
@@ -211,12 +213,22 @@ export class BlockEvents extends BaseEventHandler {
      * 機械配置の共通処理
      */
     handleMachinePlace(block, player, machineSystem, displayName) {
-        machineSystem.register ? machineSystem.register(block) : 
+        const result = machineSystem.register ? machineSystem.register(block) : 
                                 machineSystem.registerGenerator ? machineSystem.registerGenerator(block) :
                                 machineSystem.registerBattery(block);
+        
+        Logger.info(`${displayName}登録結果: ${result}, 位置: ${Utils.locationToKey(block.location)}`, "BlockEvents");
+        
         BlockUtils.playSound(block, Constants.SOUNDS.BLOCK_PLACE, { volume: 0.8 });
         mfCableSystem.updateAdjacentBlocks(block);
         this.sendDebugMessage(player, `${displayName}を配置: ${Utils.locationToKey(block.location)}`);
+    }
+
+    handleElectricFurnacePlace(block, player) {
+        this.handleMachinePlace(block, player, electricFurnace, "電気炉");
+        
+        // 隣接するパイプを更新（アイテム輸送のため）
+        this.updateAdjacentPipes(block);
     }
 
     handleCablePlace(block, player) {
@@ -284,6 +296,13 @@ export class BlockEvents extends BaseEventHandler {
             energySystem.clearEnergy(location, dimension);
             mfCableSystem.onBlockRemoved(location, dimension);
             return; // ここで処理を終了
+        }
+        // 電気炉の場合
+        else if (typeId === Constants.BLOCK_TYPES.ELECTRIC_FURNACE) {
+            electricFurnace.cleanup(location, dimension);
+            
+            // 隣接するパイプを更新
+            this.updateAdjacentPipesAtLocation(location, dimension);
         } else {
             // 他のエネルギーブロックは通常のドロップ
             this.dropStoredEnergy(location, dimension, brokenPermutation);

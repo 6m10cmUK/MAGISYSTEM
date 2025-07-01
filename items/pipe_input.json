@@ -5,7 +5,7 @@
       "identifier": "magisystem:pipe_input"
     },
     "components": {
-      "minecraft:icon": "lapis_lazuli",
+      "minecraft:icon": "lapis_block",
       "minecraft:display_name": {
         "value": "§9アイテムパイプ（入力専用）"
       },

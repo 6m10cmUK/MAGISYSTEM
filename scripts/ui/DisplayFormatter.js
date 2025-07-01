@@ -21,6 +21,18 @@ export class DisplayFormatter {
                     if (info.data.isActive && info.data.generationRate) {
                         parts.push(`§7発電: §a${info.data.generationRate} MF/s`);
                     }
+                    // 電気炉の場合
+                    else if (info.data.smeltTime !== undefined) {
+                        if (info.data.isActive) {
+                            parts.push(`§7精錬中: §e${info.data.inputItem ? info.data.inputItem.replace('minecraft:', '') : 'なし'}`);
+                            parts.push(`§7進捗: §a${info.data.smeltProgress}%`);
+                            parts.push(`§7残り: §f${Math.ceil(info.data.smeltTime / 20)}秒`);
+                        } else if (info.data.energy < info.data.energyPerTick) {
+                            parts.push(`§cエネルギー不足`);
+                        } else {
+                            parts.push(`§7待機中`);
+                        }
+                    }
                 }
                 parts.push(`§f${InfoGatherer.formatNumber(info.data.energy)}/${InfoGatherer.formatNumber(info.data.maxEnergy)} MF(§f${info.data.percent}%)`);
                 break;

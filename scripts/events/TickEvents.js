@@ -9,6 +9,7 @@ import { energySystem } from "../energy/EnergySystem.js";
 import { generator } from "../machines/Generator.js";
 import { creativeGenerator } from "../machines/CreativeGenerator.js";
 import { battery } from "../machines/Battery.js";
+import { electricFurnace } from "../machines/ElectricFurnace.js";
 import { itemNetwork } from "../items/ItemNetwork.js";
 import { itemTransportManager } from "../items/ItemTransportManager.js";
 import { Constants } from "../core/Constants.js";
@@ -195,6 +196,10 @@ export class TickEvents extends BaseEventHandler {
         // バッテリーの更新
         else if (BlockTypeUtils.isBattery(typeId)) {
             battery.updateBattery(block);
+        }
+        // 電気炉の更新
+        else if (typeId === Constants.BLOCK_TYPES.ELECTRIC_FURNACE) {
+            electricFurnace.update(block);
         }
         // その他の機械（将来の実装用）
         else if (typeId === Constants.BLOCK_TYPES.IRON_FURNACE) {

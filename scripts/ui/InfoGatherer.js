@@ -3,6 +3,7 @@ import { energyNetwork } from "../energy/EnergyNetwork.js";
 import { generator } from "../machines/Generator.js";
 import { creativeGenerator } from "../machines/CreativeGenerator.js";
 import { battery } from "../machines/Battery.js";
+import { electricFurnace } from "../machines/ElectricFurnace.js";
 import { itemNetwork } from "../items/ItemNetwork.js";
 import { itemPipeSystem } from "../pipes/ItemPipeSystem.js";
 import { Constants } from "../core/Constants.js";
@@ -60,6 +61,22 @@ export class InfoGatherer {
             const batteryInfo = battery.getBatteryInfo(block);
             if (batteryInfo) {
                 info.data.transferRate = batteryInfo.transferRate;
+            }
+        }
+        // 電気炉
+        else if (typeId === Constants.BLOCK_TYPES.ELECTRIC_FURNACE) {
+            const key = energySystem.getLocationKey(block.location);
+            const machineData = electricFurnace.machines.get(key);
+            if (machineData) {
+                info.data.isActive = machineData.active;
+                info.data.energyPerTick = electricFurnace.ENERGY_PER_TICK;
+                info.data.smeltTime = machineData.smeltTime;
+                info.data.maxSmeltTime = machineData.maxSmeltTime;
+                info.data.inputItem = machineData.inputItem;
+                info.data.outputItem = machineData.outputItem;
+                info.data.smeltProgress = machineData.maxSmeltTime > 0 
+                    ? Math.round((machineData.maxSmeltTime - machineData.smeltTime) / machineData.maxSmeltTime * 100)
+                    : 0;
             }
         }
 

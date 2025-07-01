@@ -130,7 +130,8 @@ export class EnergySystem {
             [Constants.BLOCK_TYPES.BATTERY]: 50000,
             [Constants.BLOCK_TYPES.BATTERY_BASIC]: 50000,
             [Constants.BLOCK_TYPES.BATTERY_ADVANCED]: 200000,
-            [Constants.BLOCK_TYPES.BATTERY_ULTIMATE]: 1000000
+            [Constants.BLOCK_TYPES.BATTERY_ULTIMATE]: 1000000,
+            [Constants.BLOCK_TYPES.ELECTRIC_FURNACE]: 10000  // 電気炉（250秒分の使用量）
         };
         
         return capacities[typeId] || 0;
@@ -147,7 +148,8 @@ export class EnergySystem {
             Constants.BLOCK_TYPES.BATTERY_BASIC,
             Constants.BLOCK_TYPES.BATTERY_ADVANCED,
             Constants.BLOCK_TYPES.BATTERY_ULTIMATE,
-            Constants.BLOCK_TYPES.IRON_FURNACE
+            Constants.BLOCK_TYPES.IRON_FURNACE,
+            Constants.BLOCK_TYPES.ELECTRIC_FURNACE
         ];
         
         return inputTypes.includes(typeId) || block.hasTag("energy_input");

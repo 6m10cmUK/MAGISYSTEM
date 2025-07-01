@@ -39,6 +39,7 @@ export const Constants = {
         
         // その他の機械
         IRON_FURNACE: 'magisystem:iron_furnace',
+        ELECTRIC_FURNACE: 'magisystem:electric_furnace',
         
         // バニラブロック
         HOPPER: 'minecraft:hopper',
