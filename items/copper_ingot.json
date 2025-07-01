@@ -9,6 +9,7 @@
     },
     "components": {
       "minecraft:max_stack_size": 64,
+      "minecraft:icon": "copper_ingot",
       "minecraft:display_name": {
         "value": "銅インゴット"
       }

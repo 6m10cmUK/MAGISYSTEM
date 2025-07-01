@@ -442,7 +442,7 @@ export class Generator extends BaseMachine {
                     machineData.fuelItem = burnData.fuelItem;
                     this.machines.set(key, machineData);
                     
-                    Logger.info(`燃焼状態を復元: ${burnData.fuelItem} (残り${burnData.burnTime}tick)`, "Generator");
+                    Logger.debug(`燃焼状態を復元: ${burnData.fuelItem} (残り${burnData.burnTime}tick)`, "Generator");
                     
                     // 視覚状態も更新
                     this.updateVisualState(block, true);

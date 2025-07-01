@@ -8,6 +8,7 @@
       "minecraft:display_name": {
         "value": "§8アイテムパイプ（出力専用）"
       },
+      "minecraft:icon": "coal",
       "minecraft:block_placer": {
         "block": "magisystem:pipe_output"
       }

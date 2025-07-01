@@ -5,6 +5,7 @@
       "identifier": "magisystem:pipe"
     },
     "components": {
+      "minecraft:icon": "iron_ingot",
       "minecraft:display_name": {
         "value": "§7アイテムパイプ（通常）"
       },

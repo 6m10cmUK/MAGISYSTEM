@@ -61,22 +61,22 @@ export class ItemTransportManager {
         }
         
         this.isRunning = true;
-        Logger.info("アイテム輸送システムを開始", "ItemTransportManager");
+        Logger.debug("アイテム輸送システムを開始", "ItemTransportManager");
         
         // 即座にDynamic Propertiesを復元
-        Logger.info("Dynamic Propertiesからパイプ情報を復元中...", "ItemTransportManager");
+        Logger.debug("Dynamic Propertiesからパイプ情報を復元中...", "ItemTransportManager");
         this.restoreFromDynamicProperties();
         
         // 段階的にスキャンを実行
         // Phase 1: 3秒後に登録済みパイプを確認（チャンクロードを待つ）
         system.runTimeout(() => {
-            Logger.info("Phase 1: 登録済みパイプを確認中...", "ItemTransportManager");
+            Logger.debug("Phase 1: 登録済みパイプを確認中...", "ItemTransportManager");
             this.checkAllRegisteredPipes();
         }, 60);
         
         // Phase 2: 5秒後に新規パイプをスキャン
         system.runTimeout(() => {
-            Logger.info("Phase 2: 新規パイプをスキャン中...", "ItemTransportManager");
+            Logger.debug("Phase 2: 新規パイプをスキャン中...", "ItemTransportManager");
             this.scanForExistingOutputPipes();
             
             // 輸送中アイテムの復元
@@ -85,7 +85,7 @@ export class ItemTransportManager {
         
         // Phase 3: 10秒後に再スキャン（確実性のため）
         system.runTimeout(() => {
-            Logger.info("Phase 3: 最終確認スキャン...", "ItemTransportManager");
+            Logger.debug("Phase 3: 最終確認スキャン...", "ItemTransportManager");
             this.checkAllRegisteredPipes();
             this.scanForExistingOutputPipes();
         }, 200);
@@ -139,7 +139,7 @@ export class ItemTransportManager {
         if (this.tickCounter % 100 === 0) {
             const activeCount = this.outputPipes.size;
             const registeredCount = this.chunkDetection.registeredPipes.size;
-            Logger.info(`輸送システム状態: 輸送元=${activeCount}個, 登録済み=${registeredCount}個, tick=${this.tickCounter}`, "ItemTransportManager");
+            Logger.debug(`輸送システム状態: 輸送元=${activeCount}個, 登録済み=${registeredCount}個, tick=${this.tickCounter}`, "ItemTransportManager");
         }
         
         // 定期的な全体チェック（60秒ごと）
@@ -568,7 +568,7 @@ export class ItemTransportManager {
      * 既存の出力パイプをスキャン
      */
     scanForExistingOutputPipes() {
-        Logger.info("既存の出力パイプをスキャン中...", "ItemTransportManager");
+        Logger.debug("既存の出力パイプをスキャン中...", "ItemTransportManager");
         let scanCount = 0;
         let foundCount = 0;
         let registeredCount = 0;
@@ -605,7 +605,7 @@ export class ItemTransportManager {
      * Dynamic Propertiesから復元
      */
     restoreFromDynamicProperties() {
-        Logger.info("Dynamic Propertiesからパイプを復元中...", "ItemTransportManager");
+        Logger.debug("Dynamic Propertiesからパイプを復元中...", "ItemTransportManager");
         let restoredCount = 0;
         
         try {
@@ -631,7 +631,7 @@ export class ItemTransportManager {
                 }
             }
             
-            Logger.info(`${restoredCount}個のパイプ位置を復元`, "ItemTransportManager");
+            Logger.debug(`${restoredCount}個のパイプ位置を復元`, "ItemTransportManager");
         } catch (error) {
             Logger.error(`Dynamic Properties復元エラー: ${error}`, "ItemTransportManager");
         }
@@ -787,7 +787,7 @@ export class ItemTransportManager {
      * 定期的な全体チェック
      */
     performPeriodicCheck() {
-        Logger.info("定期的な全体チェックを実行", "ItemTransportManager");
+        Logger.debug("定期的な全体チェックを実行", "ItemTransportManager");
         
         // 非同期的に実行
         system.runTimeout(() => {
@@ -840,7 +840,7 @@ export class ItemTransportManager {
             }
         }
         
-        Logger.info(`全体チェック完了: ${checkedCount}個確認、${activatedCount}個アクティベート、${removedCount}個削除`, "ItemTransportManager");
+        Logger.debug(`全体チェック完了: ${checkedCount}個確認、${activatedCount}個アクティベート、${removedCount}個削除`, "ItemTransportManager");
     }
     
     /**
@@ -1232,7 +1232,7 @@ export class ItemTransportManager {
             world.setDynamicProperty("magisystem:transitNetworks", undefined);
             
             if (totalRestored > 0 || totalSkipped > 0) {
-                Logger.info(`輸送中アイテム復元: ${totalRestored}個復元, ${totalSkipped}個スキップ`, "ItemTransportManager");
+                Logger.debug(`輸送中アイテム復元: ${totalRestored}個復元, ${totalSkipped}個スキップ`, "ItemTransportManager");
             }
         } catch (error) {
             Logger.warn(`輸送中アイテムの復元に失敗: ${error}`, "ItemTransportManager");
