@@ -1,5 +1,6 @@
 import { world, system, ItemStack } from "@minecraft/server";
 import { itemPipeSystem } from "../pipes/ItemPipeSystem.js";
+import { storageBin } from "../machines/StorageBin.js";
 
 export class ItemNetwork {
     constructor() {
@@ -79,6 +80,12 @@ export class ItemNetwork {
      */
     getInventory(block) {
         try {
+            // ストレージビンの場合は専用のインベントリを返す
+            if (block.typeId === "magisystem:storage_bin") {
+                const inventoryComponent = storageBin.getInventoryComponent(block);
+                return inventoryComponent?.container || null;
+            }
+            
             // インベントリコンポーネントを取得
             const inventory = block.getComponent("minecraft:inventory");
             return inventory?.container || null;

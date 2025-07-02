@@ -9,6 +9,7 @@ import { itemPipeSystem } from "../pipes/ItemPipeSystem.js";
 import { Constants } from "../core/Constants.js";
 import { BlockTypeUtils } from "../utils/BlockTypeUtils.js";
 import { DisplayNameRegistry } from "../core/DisplayNameRegistry.js";
+import { storageBin } from "../machines/StorageBin.js";
 
 /**
  * ブロック情報収集クラス
@@ -202,6 +203,28 @@ export class InfoGatherer {
     }
 
     /**
+     * ストレージビン情報を収集
+     * @param {Block} block - 対象ブロック
+     * @returns {Object} 情報オブジェクト
+     */
+    static gatherStorageBinInfo(block) {
+        const storageInfo = storageBin.getStorageInfo(block);
+        
+        const info = {
+            type: "storage",
+            typeId: block.typeId,
+            data: {
+                itemType: storageInfo?.itemType || null,
+                itemCount: storageInfo?.itemCount || 0,
+                maxCount: storageInfo?.maxCount || Constants.STORAGE_BIN.MAX_ITEM_COUNT,
+                fillPercent: storageInfo?.fillPercent || 0
+            }
+        };
+
+        return info;
+    }
+
+    /**
      * ブロックタイプに応じて適切な情報を収集
      * @param {Block} block - 対象ブロック
      * @returns {Object} 情報オブジェクト
@@ -217,6 +240,8 @@ export class InfoGatherer {
             return this.gatherCableInfo(block);
         } else if (BlockTypeUtils.isPipe(typeId)) {
             return await this.gatherPipeInfo(block);
+        } else if (typeId === Constants.BLOCK_TYPES.STORAGE_BIN) {
+            return this.gatherStorageBinInfo(block);
         } else if (itemPipeSystem.hasInventory(block)) {
             return this.gatherInventoryInfo(block);
         }

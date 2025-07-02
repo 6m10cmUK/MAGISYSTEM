@@ -3,7 +3,7 @@
  * 発電機の表示アイテムを拾えないようにする
  */
 
-import { world } from "@minecraft/server";
+import { world, system } from "@minecraft/server";
 import { BaseEventHandler } from "./BaseEventHandler.js";
 import { Logger } from "../core/Logger.js";
 import { ErrorHandler } from "../core/ErrorHandler.js";
@@ -30,6 +30,18 @@ export class ItemPickupEvents extends BaseEventHandler {
             (event) => this.onEntityHit(event),
             "entityHitEntity"
         );
+        
+        // プレイヤーのインベントリ変更を監視
+        this.safeSubscribe(
+            world.afterEvents.playerJoin,
+            (event) => this.setupInventoryMonitor(event.player),
+            "playerJoin"
+        );
+        
+        // 既存のプレイヤーに対しても設定
+        for (const player of world.getAllPlayers()) {
+            this.setupInventoryMonitor(player);
+        }
     }
 
     /**
@@ -53,10 +65,10 @@ export class ItemPickupEvents extends BaseEventHandler {
             if (damagingEntity?.typeId === "minecraft:player" && 
                 hitEntity?.typeId === "minecraft:item") {
                 
-                // generator_displayタグを持つアイテムは拾えないようにする
-                if (hitEntity.hasTag("generator_display")) {
+                // generator_display、storage_display、storage_display_itemタグを持つアイテムは拾えないようにする
+                if (hitEntity.hasTag("generator_display") || hitEntity.hasTag("storage_display") || hitEntity.hasTag("storage_display_item")) {
                     // アイテムを元の位置に戻す
-                    const posTag = hitEntity.getTags().find(tag => tag.startsWith("generator_"));
+                    const posTag = hitEntity.getTags().find(tag => tag.startsWith("generator_") || tag.startsWith("storage_"));
                     if (posTag) {
                         const parts = posTag.split("_");
                         if (parts.length === 4) {
@@ -74,6 +86,15 @@ export class ItemPickupEvents extends BaseEventHandler {
                 }
             }
         }, "ItemPickupEvents.onEntityHit");
+    }
+    
+    /**
+     * プレイヤーのインベントリを監視
+     * @param {Player} player 
+     */
+    setupInventoryMonitor(player) {
+        // プレイヤーごとのインベントリ監視はパフォーマンス的に重いので削除
+        // 代わりに、アイテムエンティティ側で拾えないように制御する
     }
 }
 

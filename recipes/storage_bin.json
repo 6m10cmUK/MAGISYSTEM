@@ -2,30 +2,27 @@
     "format_version": "1.21.59",
     "minecraft:recipe_shaped": {
         "description": {
-            "identifier": "magisystem:seebeck_generator"
+            "identifier": "magisystem:storage_bin"
         },
         "tags": ["crafting_table"],
         "pattern": [
-            "IRI",
-            "CDC",
-            "IRI"
+            "ICI",
+            "CHC",
+            "ICI"
         ],
         "key": {
             "I": {
                 "item": "minecraft:iron_ingot"
             },
-            "R": {
-                "item": "minecraft:redstone"
-            },
             "C": {
-                "item": "minecraft:copper_ingot"
+                "item": "minecraft:chest"
             },
-            "D": {
-                "item": "minecraft:diamond"
+            "H": {
+                "item": "minecraft:hopper"
             }
         },
         "result": {
-            "item": "magisystem:seebeck_generator",
+            "item": "magisystem:storage_bin",
             "count": 1
         },
         "unlock": {

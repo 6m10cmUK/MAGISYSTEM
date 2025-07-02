@@ -1,0 +1,70 @@
+{
+    "format_version": "1.16.0",
+    "minecraft:entity": {
+        "description": {
+            "identifier": "magisystem:storage_entity",
+            "is_spawnable": false,
+            "is_summonable": true,
+            "is_experimental": false
+        },
+        "components": {
+            "minecraft:inventory": {
+                "container_type": "inventory",
+                "inventory_size": 1,
+                "can_be_siphoned_from": false
+            },
+            "minecraft:collision_box": {
+                "width": 0.0,
+                "height": 0.0
+            },
+            "minecraft:damage_sensor": {
+                "triggers": [
+                    {
+                        "cause": "all",
+                        "deals_damage": false
+                    }
+                ]
+            },
+            "minecraft:pushable": {
+                "is_pushable": false,
+                "is_pushthrough": true
+            },
+            "minecraft:knockback_resistance": {
+                "value": 1.0
+            },
+            "minecraft:physics": {
+                "has_gravity": false,
+                "has_collision": false
+            },
+            "minecraft:health": {
+                "value": 1,
+                "max": 1
+            },
+            "minecraft:persistent": {},
+            "minecraft:despawn": {
+                "remove_child_entities": true,
+                "despawn_from_distance": {
+                    "max_distance": 128,
+                    "min_distance": 32
+                }
+            }
+        },
+        "events": {
+            "minecraft:entity_spawned": {
+                "add": {
+                    "component_groups": ["magisystem:storage_active"]
+                }
+            },
+            "magisystem:set_data": {
+                "set_property": {
+                    "magisystem:storage_item_count": "= query.property('magisystem:storage_item_count')"
+                }
+            }
+        },
+        "component_groups": {
+            "magisystem:storage_active": {
+                "minecraft:is_hidden_when_invisible": {}
+            }
+        }
+    }
+}

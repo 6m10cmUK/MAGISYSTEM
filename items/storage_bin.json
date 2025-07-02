@@ -1,0 +1,20 @@
+{
+    "format_version": "1.21.59",
+    "minecraft:item": {
+        "description": {
+            "identifier": "magisystem:storage_bin",
+            "menu_category": {
+                "category": "construction",
+                "group": "itemGroup.name.chest"
+            }
+        },
+        "components": {
+            "minecraft:block_placer": {
+                "block": "magisystem:storage_bin"
+            },
+            "minecraft:display_name": {
+                "value": "ストレージビン"
+            }
+        }
+    }
+}

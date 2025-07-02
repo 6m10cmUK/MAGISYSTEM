@@ -34,7 +34,7 @@
     },
     {
       "uuid": "a7f7b2e3-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
-      "version": [1, 0, 0]
+      "version": [1, 1, 1]
     }
   ],
   "capabilities": ["script_eval"]

@@ -32,6 +32,9 @@ export const Constants = {
         CABLE_INPUT: 'magisystem:cable_input',
         CABLE_OUTPUT: 'magisystem:cable_output',
         
+        // ストレージ
+        STORAGE_BIN: 'magisystem:storage_bin',
+        
         // パイプ
         PIPE: 'magisystem:pipe',
         PIPE_INPUT: 'magisystem:pipe_input',
@@ -101,6 +104,13 @@ export const Constants = {
         SMELT_TIME: 133, // tick (バニラの1.5倍速)
         CAPACITY: 10000, // MF
         STACK_LIMIT: 64,
+    },
+
+    // ストレージビン設定
+    STORAGE_BIN: {
+        MAX_ITEM_COUNT: 100000, // 最大アイテム数
+        STACK_SIZE: 64, // 1スタックのサイズ
+        PROPERTY_KEY: 'magisystem:storage_data', // Dynamic Property用のキー
     },
 
     // ブロック状態名
@@ -176,6 +186,19 @@ export const Constants = {
         FIZZ: 'random.fizz',
         POP: 'random.pop',
         LEVELUP: 'random.levelup',
+    },
+
+    // ストレージビン設定
+    STORAGE_BIN: {
+        MAX_ITEM_COUNT: 5184,  // 81スタック分
+        STACK_SIZE: 64,        // 1スタックのアイテム数
+        // アイテム表示設定
+        DISPLAY: {
+            NAME_TAG_COLOR: {
+                ITEM_NAME: '§e',  // 黄色
+                COUNT: '§f'       // 白色
+            }
+        }
     },
 };
 

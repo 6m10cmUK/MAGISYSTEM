@@ -55,8 +55,7 @@
         ]
       },
       "tag:energy_consumer": {},
-      "tag:mf_input": {},
-      "tag:energy_input": {}
+      "tag:mf_input": {}
     },
     "permutations": [
       {

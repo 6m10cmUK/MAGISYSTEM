@@ -38,6 +38,8 @@ export class Wrench {
         // ActionBar表示の開始
         if (block.typeId.includes("pipe")) {
             this.startBlockInspection(block, player, "item_network");
+        } else if (block.typeId === Constants.BLOCK_TYPES.STORAGE_BIN) {
+            this.startBlockInspection(block, player, "storage");
         } else if (energySystem.isEnergyBlock(block) || block.typeId.includes("cable")) {
             this.startBlockInspection(block, player, "energy");
         } else if (itemPipeSystem.hasInventory(block)) {

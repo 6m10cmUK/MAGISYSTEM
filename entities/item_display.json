@@ -1,0 +1,162 @@
+{
+    "format_version": "1.21.59",
+    "minecraft:entity": {
+        "description": {
+            "identifier": "magisystem:item_display",
+            "is_spawnable": true,
+            "is_summonable": true,
+            "is_experimental": false
+        },
+        "component_groups": {
+            "scale_small": {
+                "minecraft:scale": {
+                    "value": 0.5
+                }
+            },
+            "scale_normal": {
+                "minecraft:scale": {
+                    "value": 0.75
+                }
+            },
+            "scale_large": {
+                "minecraft:scale": {
+                    "value": 1.0
+                }
+            },
+            "texture_stone": {
+                "minecraft:variant": {
+                    "value": 1
+                }
+            },
+            "texture_iron_ingot": {
+                "minecraft:variant": {
+                    "value": 2
+                }
+            },
+            "texture_diamond": {
+                "minecraft:variant": {
+                    "value": 3
+                }
+            }
+        },
+        "components": {
+            "minecraft:type_family": {
+                "family": ["inanimate", "item_display"]
+            },
+            "minecraft:collision_box": {
+                "width": 0.01,
+                "height": 0.01
+            },
+            "minecraft:damage_sensor": {
+                "triggers": [{
+                    "cause": "all",
+                    "deals_damage": "no"
+                }]
+            },
+            "minecraft:knockback_resistance": {
+                "value": 1.0
+            },
+            "minecraft:pushable": {
+                "is_pushable": false,
+                "is_pushable_by_piston": false
+            },
+            "minecraft:physics": {
+                "has_gravity": false,
+                "has_collision": false
+            },
+            "minecraft:persistent": {},
+            "minecraft:health": {
+                "value": 1,
+                "max": 1
+            },
+            "minecraft:hurt_on_condition": {
+                "damage_conditions": [
+                    {
+                        "filters": {
+                            "test": "in_lava",
+                            "subject": "self",
+                            "operator": "==",
+                            "value": true
+                        },
+                        "cause": "lava",
+                        "damage_per_tick": 0
+                    }
+                ]
+            },
+            "minecraft:behavior.float": {
+                "priority": 0
+            },
+            "minecraft:nameable": {
+                "always_show": true,
+                "allow_name_tag_renaming": false
+            },
+            "minecraft:equippable": {
+                "slots": [
+                    {
+                        "slot": 0,
+                        "accepted_items": []
+                    }
+                ]
+            },
+            "minecraft:interact": {
+                "interactions": [
+                    {
+                        "on_interact": {
+                            "filters": {
+                                "all_of": [
+                                    {
+                                        "test": "is_family",
+                                        "subject": "other",
+                                        "value": "player"
+                                    }
+                                ]
+                            },
+                            "event": "magisystem:prevent_interaction",
+                            "target": "self"
+                        }
+                    }
+                ]
+            }
+        },
+        "events": {
+            "magisystem:scale_small": {
+                "add": {
+                    "component_groups": ["scale_small"]
+                },
+                "remove": {
+                    "component_groups": ["scale_normal", "scale_large"]
+                }
+            },
+            "magisystem:scale_normal": {
+                "add": {
+                    "component_groups": ["scale_normal"]
+                },
+                "remove": {
+                    "component_groups": ["scale_small", "scale_large"]
+                }
+            },
+            "magisystem:scale_large": {
+                "add": {
+                    "component_groups": ["scale_large"]
+                },
+                "remove": {
+                    "component_groups": ["scale_small", "scale_normal"]
+                }
+            },
+            "magisystem:prevent_interaction": {},
+            "magisystem:despawn": {
+                "remove": {}
+            },
+            "magisystem:display_item": {
+                "add": {
+                    "component_groups": []
+                }
+            },
+            "magisystem:display_block": {
+                "add": {
+                    "component_groups": []
+                }
+            }
+        }
+    }
+}

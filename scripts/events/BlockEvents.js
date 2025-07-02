@@ -11,6 +11,7 @@ import { creativeGenerator } from "../machines/CreativeGenerator.js";
 import { battery } from "../machines/Battery.js";
 import { electricFurnace } from "../machines/ElectricFurnace.js";
 import { seebeckGenerator } from "../machines/SeebeckGenerator.js";
+import { storageBin } from "../machines/StorageBin.js";
 import { mfCableSystem } from "../cables/MFCableSystem.js";
 import { itemPipeSystem } from "../pipes/ItemPipeSystem.js";
 import { itemTransportManager } from "../items/ItemTransportManager.js";
@@ -38,6 +39,7 @@ export class BlockEvents extends BaseEventHandler {
             [Constants.BLOCK_TYPES.PIPE_OUTPUT, this.handlePipePlace.bind(this)],
             [Constants.BLOCK_TYPES.ELECTRIC_FURNACE, this.handleElectricFurnacePlace.bind(this)],
             ['magisystem:seebeck_generator', this.handleSeebeckGeneratorPlace.bind(this)],
+            [Constants.BLOCK_TYPES.STORAGE_BIN, this.handleStorageBinPlace.bind(this)],
         ]);
     }
 
@@ -147,11 +149,29 @@ export class BlockEvents extends BaseEventHandler {
             itemTransportManager.onPipeRemoved(location, dimension, typeId);
         }
         
+        // ストレージビンの場合
+        else if (typeId === Constants.BLOCK_TYPES.STORAGE_BIN) {
+            Logger.info(`ストレージビンを破壊: ${typeId}`, this.name);
+            try {
+                if (storageBin && typeof storageBin.unregister === 'function') {
+                    storageBin.unregister(location, dimension);
+                } else {
+                    Logger.error(`storageBin.unregister is not a function. storageBin type: ${typeof storageBin}`, this.name);
+                    if (storageBin) {
+                        Logger.error(`storageBin methods: ${Object.getOwnPropertyNames(Object.getPrototypeOf(storageBin)).join(', ')}`, this.name);
+                    }
+                }
+            } catch (error) {
+                Logger.error(`ストレージビン削除エラー: ${error}`, this.name);
+            }
+        }
+        
         // インベントリブロックの場合、隣接するパイプを更新
         const inventory = brokenBlockPermutation.getComponent?.("minecraft:inventory");
         if (inventory || itemPipeSystem.inventoryBlocks.has(typeId) || 
             typeId === Constants.BLOCK_TYPES.THERMAL_GENERATOR ||
-            typeId === Constants.BLOCK_TYPES.ELECTRIC_FURNACE) {
+            typeId === Constants.BLOCK_TYPES.ELECTRIC_FURNACE ||
+            typeId === Constants.BLOCK_TYPES.STORAGE_BIN) {
             this.updateAdjacentPipesAtLocation(location, dimension);
         }
     }
@@ -257,6 +277,17 @@ export class BlockEvents extends BaseEventHandler {
         this.sendDebugMessage(player, `ゼーベック発電機を配置: ${Utils.locationToKey(block.location)}`);
     }
 
+    handleStorageBinPlace(block, player) {
+        Logger.info(`ストレージビンを配置: ${block.typeId}`, this.name);
+        const result = storageBin.register(block);
+        
+        Logger.info(`ストレージビン登録結果: ${result}, 位置: ${Utils.locationToKey(block.location)}`, "BlockEvents");
+        
+        BlockUtils.playSound(block, Constants.SOUNDS.BLOCK_PLACE, { volume: 0.8 });
+        this.updateAdjacentPipes(block);
+        this.sendDebugMessage(player, `ストレージビンを配置: ${Utils.locationToKey(block.location)}`);
+    }
+
     handleCablePlace(block, player) {
         mfCableSystem.onBlockPlaced(block);
         BlockUtils.playSound(block, Constants.SOUNDS.BLOCK_PLACE, { volume: 0.5 });
@@ -333,6 +364,22 @@ export class BlockEvents extends BaseEventHandler {
         // ゼーベック発電機の場合
         else if (typeId === 'magisystem:seebeck_generator') {
             seebeckGenerator.unregisterSeebeckGenerator(location, dimension);
+        }
+        // ストレージビンの場合
+        else if (typeId === Constants.BLOCK_TYPES.STORAGE_BIN) {
+            try {
+                if (storageBin && typeof storageBin.unregister === 'function') {
+                    storageBin.unregister(location, dimension);
+                } else {
+                    Logger.error(`handleEnergyBlockBreak: storageBin.unregister is not a function`, this.name);
+                }
+            } catch (error) {
+                Logger.error(`ストレージビン削除エラー(handleEnergyBlockBreak): ${error}`, this.name);
+            }
+            
+            // 隣接するパイプを更新
+            this.updateAdjacentPipesAtLocation(location, dimension);
+            return;
         } else {
             // 他のエネルギーブロックは通常のドロップ
             this.dropStoredEnergy(location, dimension, brokenPermutation);

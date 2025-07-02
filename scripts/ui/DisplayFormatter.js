@@ -53,6 +53,16 @@ export class DisplayFormatter {
                     parts.push(`§7パイプ: §a${info.data.pipeConnections}方向`);
                 }
                 break;
+
+            case "storage":
+                if (info.data.itemType) {
+                    // アイテム名を整形（minecraft: プレフィックスを削除）
+                    const itemName = info.data.itemType.replace('minecraft:', '');
+                    parts.push(`§e${itemName} §f${InfoGatherer.formatNumber(info.data.itemCount)}個`);
+                } else {
+                    parts.push(`§7空`);
+                }
+                break;
         }
 
         return parts.join(" §r| ");

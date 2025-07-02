@@ -1,0 +1,36 @@
+{
+    "format_version": "1.21.59",
+    "minecraft:block": {
+        "description": {
+            "identifier": "magisystem:storage_bin",
+            "menu_category": {
+                "category": "construction",
+                "group": "itemGroup.name.chest"
+            },
+            "states": {
+                "magisystem:has_item": [false, true],
+                "magisystem:fill_level": {
+                    "values": { "min": 0, "max": 10 }
+                }
+            }
+        },
+        "components": {
+            "minecraft:destructible_by_mining": {
+                "seconds_to_destroy": 2
+            },
+            "minecraft:destructible_by_explosion": {
+                "explosion_resistance": 10
+            },
+            "minecraft:geometry": {
+                "identifier": "geometry.storage_bin"
+            },
+            "minecraft:material_instances": {
+                "*": {
+                    "texture": "stone",
+                    "render_method": "opaque"
+                }
+            },
+            "minecraft:loot": "loot_tables/blocks/storage_bin.json"
+        }
+    }
+}

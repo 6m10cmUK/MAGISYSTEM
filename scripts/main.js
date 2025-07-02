@@ -2,6 +2,7 @@ import { world, system } from "@minecraft/server";
 import { blockEvents } from "./events/BlockEvents.js";
 import { tickEvents } from "./events/TickEvents.js";
 import { itemPickupEvents } from "./events/ItemPickupEvents.js";
+import { itemUseEvents } from "./events/ItemUseEvents.js";
 import { Wrench } from "./tools/Wrench.js";
 import { generator } from "./machines/Generator.js";
 import { electricFurnace } from "./machines/ElectricFurnace.js";
@@ -13,6 +14,7 @@ import { itemTransportManager } from "./items/ItemTransportManager.js";
 import { itemPipeSystem } from "./pipes/ItemPipeSystem.js";
 import { Utils } from "./core/Utils.js";
 import { machineDataManager } from "./machines/MachineDataManager.js";
+import { storageBin } from "./machines/StorageBin.js";
 // import { burnProgressDisplay } from "./ui/BurnProgressDisplay.js";
 
 // 初期化
@@ -26,6 +28,7 @@ class MagisystemMain {
             blockEvents.register();
             tickEvents.register();
             itemPickupEvents.register();
+            itemUseEvents.register();
             Wrench.register();
             
             // アイテム拾いの防止
@@ -43,6 +46,7 @@ class MagisystemMain {
             // 機械データ管理システムに機械を登録
             machineDataManager.registerMachine('generator', generator);
             machineDataManager.registerMachine('electricFurnace', electricFurnace);
+            machineDataManager.registerMachine('storageBin', storageBin);
             
             // 燃焼進行状況表示システムは削除
             // burnProgressDisplay.initialize();
@@ -117,6 +121,9 @@ class MagisystemMain {
             this.restoreEnergyData();
             // 個別の復元処理は削除（machineDataManagerが管理）
             // this.restoreMachineData();
+            
+            // ストレージビンをスキャン
+            storageBin.scanAllStorageBins();
         }, 20); // 1秒後
         
         // パイプの見た目を定期的に修正する処理を開始

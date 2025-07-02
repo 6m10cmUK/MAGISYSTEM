@@ -1,0 +1,55 @@
+{
+    "format_version": "1.21.59",
+    "minecraft:entity": {
+        "description": {
+            "identifier": "magisystem:storage_display",
+            "is_spawnable": false,
+            "is_summonable": true,
+            "is_experimental": false
+        },
+        "components": {
+            "minecraft:type_family": {
+                "family": ["inanimate", "item_display"]
+            },
+            "minecraft:collision_box": {
+                "width": 0.01,
+                "height": 0.01
+            },
+            "minecraft:damage_sensor": {
+                "triggers": []
+            },
+            "minecraft:knockback_resistance": {
+                "value": 1.0
+            },
+            "minecraft:pushable": {
+                "is_pushable": false,
+                "is_pushable_by_piston": false
+            },
+            "minecraft:physics": {
+                "has_gravity": false,
+                "has_collision": false
+            },
+            "minecraft:scale": {
+                "value": 0.75
+            },
+            "minecraft:behavior.float": {
+                "priority": 0
+            },
+            "minecraft:is_stackable": {},
+            "minecraft:equipment": {
+                "table": "loot_tables/empty.json",
+                "slot_drop_chance": [
+                    {
+                        "slot": "slot.weapon.mainhand",
+                        "drop_chance": 0
+                    }
+                ]
+            }
+        },
+        "events": {
+            "magisystem:remove_self": {
+                "remove": {}
+            }
+        }
+    }
+}
