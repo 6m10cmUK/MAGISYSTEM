@@ -532,57 +532,6 @@ export class StorageBin {
     keepItemInPlace(itemEntity, targetLocation, key) {
         this.keepItemEntityInPlace(itemEntity, targetLocation, key);
     }
-        // 定期的にアイテムを定位置に戻す
-        const intervalId = system.runInterval(() => {
-            try {
-                // アイテムエンティティがまだ存在するか確認
-                if (!itemEntity.isValid()) {
-                    system.clearRun(intervalId);
-                    return;
-                }
-                
-                // タグが削除されていたら（表示終了）
-                if (!itemEntity.hasTag(`storage_${key}`)) {
-                    system.clearRun(intervalId);
-                    return;
-                }
-                
-                // アイテムを定位置にテレポート
-                itemEntity.teleport(targetLocation);
-                
-                // 速度をリセット
-                itemEntity.clearVelocity();
-                
-                // アイテムの年齢をリセット（5分で消えるのを防ぐ）
-                // ピックアップ遅延も毎回設定
-                try {
-                    itemEntity.runCommand("data merge entity @s {Age:0s,PickupDelay:32767s}");
-                } catch (e) {
-                    // Bedrockではdataコマンドが使えないので、別の方法を試す
-                    try {
-                        // アイテムを高い位置に保つことで拾いにくくする
-                        const highLocation = {
-                            x: targetLocation.x,
-                            y: targetLocation.y + 0.3,
-                            z: targetLocation.z
-                        };
-                        itemEntity.teleport(highLocation);
-                    } catch (e2) {
-                        // エラーは無視
-                    }
-                }
-            } catch (error) {
-                // エラーが発生したらインターバルを停止
-                system.clearRun(intervalId);
-            }
-        }, 1); // 毎tick実行
-        
-        // インターバルIDを記録（後でクリアするため）
-        if (!this.itemIntervals) {
-            this.itemIntervals = new Map();
-        }
-        this.itemIntervals.set(key, intervalId);
-    }
     
     /**
      * ホログラムテキストを削除

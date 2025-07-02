@@ -56,8 +56,8 @@
                 }
             },
             "magisystem:set_data": {
-                "set_property": {
-                    "magisystem:storage_item_count": "= query.property('magisystem:storage_item_count')"
+                "add": {
+                    "component_groups": ["magisystem:storage_active"]
                 }
             }
         },
