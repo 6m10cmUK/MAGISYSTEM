@@ -1,0 +1,38 @@
+{
+    "format_version": "1.21.59",
+    "minecraft:item": {
+        "description": {
+            "identifier": "magisystem:chalk",
+            "menu_category": {
+                "category": "items"
+            }
+        },
+        "components": {
+            "minecraft:icon": {
+                "textures": {
+                    "default": "chalk"
+                }
+            },
+            "minecraft:display_name": {
+                "value": "チョーク"
+            },
+            "minecraft:max_stack_size": {
+                "value": 1
+            },
+            "minecraft:durability": {
+                "max_durability": 100
+            },
+            "minecraft:damage": {
+                "value": 0
+            },
+            "minecraft:repairable": {
+                "repair_items": [
+                    {
+                        "items": ["minecraft:white_dye"],
+                        "repair_amount": 20
+                    }
+                ]
+            }
+        }
+    }
+}

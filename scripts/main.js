@@ -14,6 +14,7 @@ import { Utils } from "./core/Utils.js";
 import { machineDataManager } from "./machines/MachineDataManager.js";
 import { autoInfoDisplay } from "./ui/AutoInfoDisplay.js";
 import { wrench } from "./tools/Wrench.js";
+import { chalk } from "./items/Chalk.js";
 
 // 初期化
 Logger.info("工業MODを初期化中...", "Main");
@@ -34,6 +35,9 @@ class MagisystemMain {
             
             // レンチシステムを初期化
             Logger.info("レンチシステムを初期化", "Main");
+            
+            // チョークシステムを初期化
+            Logger.info("チョークシステムを初期化", "Main");
             
             // アイテム拾いの防止
             this.registerItemPickupPrevention();

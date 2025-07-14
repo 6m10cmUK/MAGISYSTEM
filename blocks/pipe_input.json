@@ -58,9 +58,6 @@
         "origin": [-4, 4, -4],
         "size": [8, 8, 8]
       },
-      "minecraft:creative_category": {
-        "category": "none"
-      },
       "tag:item_pipe": {},
       "tag:item_conduit": {},
       "tag:item_input_only": {}

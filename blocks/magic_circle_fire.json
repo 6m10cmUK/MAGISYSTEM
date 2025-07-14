@@ -1,0 +1,53 @@
+{
+  "format_version": "1.20.80",
+  "minecraft:block": {
+    "description": {
+      "identifier": "magisystem:magic_circle_fire",
+      "menu_category": {
+        "category": "none"
+      }
+    },
+    "components": {
+      "minecraft:destructible_by_mining": {
+        "seconds_to_destroy": 0
+      },
+      "minecraft:destructible_by_explosion": {
+        "explosion_resistance": 0
+      },
+      "minecraft:geometry": {
+        "identifier": "geometry.magic_circle"
+      },
+      "minecraft:material_instances": {
+        "*": {
+          "texture": "magi_circle_fire",
+          "render_method": "alpha_test",
+          "face_dimming": false,
+          "ambient_occlusion": false
+        }
+      },
+      "minecraft:placement_filter": {
+        "conditions": [
+          {
+            "allowed_faces": ["up"],
+            "block_filter": [
+              {
+                "tags": "!q.any_tag('air', 'water', 'lava')"
+              }
+            ]
+          }
+        ]
+      },
+      "minecraft:collision_box": {
+        "origin": [-8, 0, -8],
+        "size": [16, 1, 16]
+      },
+      "minecraft:selection_box": {
+        "origin": [-8, 0, -8],
+        "size": [16, 1, 16]
+      },
+      "minecraft:map_color": "#FF0000",
+      "tag:magic_circle": {},
+      "tag:fire_circle": {}
+    }
+  }
+}
