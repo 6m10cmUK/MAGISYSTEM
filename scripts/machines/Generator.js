@@ -9,6 +9,7 @@ import { ParticleEffectManager } from "../effects/ParticleEffectManager.js";
 import { ErrorHandler } from "../core/ErrorHandler.js";
 import { Logger } from "../core/Logger.js";
 import BlockUtils from "../utils/BlockUtils.js";
+import { machineDataManager } from "./MachineDataManager.js";
 
 /**
  * 発電機クラス
@@ -404,7 +405,7 @@ export class Generator extends BaseMachine {
     }
 
     /**
-     * 燃焼状態をDynamic Propertiesに保存
+     * 燃焼状態を保存
      * @private
      */
     saveBurnData(block, data) {
@@ -416,24 +417,23 @@ export class Generator extends BaseMachine {
                 fuelItem: data.fuelItem
             };
             
-            // Dynamic Propertyに保存
-            world.setDynamicProperty(`magisystem:burnData_${key}`, JSON.stringify(burnData));
+            // 統一マシンデータマネージャーを使用
+            machineDataManager.saveMachineData(key, 'burn', burnData);
             
             Logger.debug(`燃焼状態を保存: ${key} - ${JSON.stringify(burnData)}`, "Generator");
         }, "Generator.saveBurnData");
     }
 
     /**
-     * Dynamic Propertiesから燃焼状態を復元
+     * 燃焼状態を復元
      * @private
      */
     restoreBurnData(block) {
         return ErrorHandler.safeTry(() => {
             const key = energySystem.getLocationKey(block.location);
-            const storedData = world.getDynamicProperty(`magisystem:burnData_${key}`);
+            const burnData = machineDataManager.getMachineData(key, 'burn');
             
-            if (storedData) {
-                const burnData = JSON.parse(storedData);
+            if (burnData) {
                 const machineData = this.machines.get(key);
                 
                 if (machineData && burnData.burnTime > 0) {
@@ -459,7 +459,7 @@ export class Generator extends BaseMachine {
     clearBurnData(block) {
         return ErrorHandler.safeTry(() => {
             const key = energySystem.getLocationKey(block.location);
-            world.setDynamicProperty(`magisystem:burnData_${key}`, undefined);
+            machineDataManager.clearMachineData(key, 'burn');
             
             Logger.debug(`燃焼状態をクリア: ${key}`, "Generator");
         }, "Generator.clearBurnData");

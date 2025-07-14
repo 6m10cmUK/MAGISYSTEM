@@ -7,6 +7,7 @@ import { world, system } from "@minecraft/server";
 import { Logger } from "../core/Logger.js";
 import { ErrorHandler } from "../core/ErrorHandler.js";
 import { energySystem } from "../energy/EnergySystem.js";
+import { storage } from "../utils/DynamicPropertyStorage.js";
 
 export class MachineDataManager {
     constructor() {
@@ -77,21 +78,22 @@ export class MachineDataManager {
      */
     scanDynamicProperties() {
         try {
-            const properties = world.getDynamicPropertyIds();
+            // 新しいストレージシステムを使用
+            const burnKeys = storage.getAllKeys(world, 'machine_burn_');
+            const smeltKeys = storage.getAllKeys(world, 'machine_smelt_');
             const machineProps = new Map();
 
             // 機械関連のプロパティを分類
-            for (const prop of properties) {
-                if (prop.startsWith('magisystem:burnData_')) {
-                    const key = prop.replace('magisystem:burnData_', '');
-                    if (!machineProps.has(key)) machineProps.set(key, {});
-                    machineProps.get(key).burnData = world.getDynamicProperty(prop);
-                }
-                else if (prop.startsWith('smelt_')) {
-                    const key = prop.replace('smelt_', '');
-                    if (!machineProps.has(key)) machineProps.set(key, {});
-                    machineProps.get(key).smeltData = world.getDynamicProperty(prop);
-                }
+            for (const key of burnKeys) {
+                const locationKey = key.replace('machine_burn_', '');
+                if (!machineProps.has(locationKey)) machineProps.set(locationKey, {});
+                machineProps.get(locationKey).burnData = storage.get(key);
+            }
+            
+            for (const key of smeltKeys) {
+                const locationKey = key.replace('machine_smelt_', '');
+                if (!machineProps.has(locationKey)) machineProps.set(locationKey, {});
+                machineProps.get(locationKey).smeltData = storage.get(key);
             }
 
             Logger.debug(`${machineProps.size}個の機械データプロパティを検出`, "MachineDataManager");
@@ -180,8 +182,8 @@ export class MachineDataManager {
      * @param {Object} data - 保存するデータ
      */
     saveMachineData(key, dataType, data) {
-        const propertyKey = this.getPropertyKey(dataType, key);
-        world.setDynamicProperty(propertyKey, JSON.stringify(data));
+        const propertyKey = this.getStorageKey(dataType, key);
+        storage.set(propertyKey, data);
         Logger.debug(`機械データを保存: ${propertyKey}`, "MachineDataManager");
     }
 
@@ -192,9 +194,8 @@ export class MachineDataManager {
      * @returns {Object|null}
      */
     getMachineData(key, dataType) {
-        const propertyKey = this.getPropertyKey(dataType, key);
-        const data = world.getDynamicProperty(propertyKey);
-        return data ? JSON.parse(data) : null;
+        const propertyKey = this.getStorageKey(dataType, key);
+        return storage.get(propertyKey, world, null);
     }
 
     /**
@@ -203,14 +204,23 @@ export class MachineDataManager {
      * @param {string} dataType - データタイプ
      */
     clearMachineData(key, dataType) {
-        const propertyKey = this.getPropertyKey(dataType, key);
-        world.setDynamicProperty(propertyKey, undefined);
+        const propertyKey = this.getStorageKey(dataType, key);
+        storage.delete(propertyKey);
         Logger.debug(`機械データをクリア: ${propertyKey}`, "MachineDataManager");
     }
 
     /**
-     * プロパティキーを生成
+     * ストレージキーを生成
      * @private
+     */
+    getStorageKey(dataType, locationKey) {
+        return `machine_${dataType}_${locationKey}`;
+    }
+    
+    /**
+     * プロパティキーを生成（互換性のために残す）
+     * @private
+     * @deprecated 新しいコードではgetStorageKeyを使用
      */
     getPropertyKey(dataType, locationKey) {
         switch (dataType) {

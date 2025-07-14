@@ -19,6 +19,7 @@ import { Utils } from "../core/Utils.js";
 import { ErrorHandler } from "../core/ErrorHandler.js";
 import { BlockTypeUtils } from "../utils/BlockTypeUtils.js";
 import { BatchProcessor } from "../utils/BatchProcessor.js";
+import { storage } from "../utils/DynamicPropertyStorage.js";
 
 export class TickEvents extends BaseEventHandler {
     constructor() {
@@ -157,17 +158,15 @@ export class TickEvents extends BaseEventHandler {
             const dimensionBlocks = new Set();
             
             try {
-                // Dynamic Propertiesから登録されたブロック位置を取得
-                const properties = world.getDynamicPropertyIds();
+                // 新しいストレージシステムからエネルギーブロックを取得
+                const energyBlockKeys = storage.getAllKeys(world, 'energy_block_');
                 
-                for (const prop of properties) {
-                    // 座標形式のプロパティをチェック
-                    if (prop.match(/^-?\d+,-?\d+,-?\d+$/)) {
-                        const storedDimId = world.getDynamicProperty(prop);
-                        
-                        if (storedDimId === dimensionId) {
-                            dimensionBlocks.add(prop);
-                        }
+                for (const key of energyBlockKeys) {
+                    const data = storage.get(key);
+                    if (data && data.dimension === dimensionId) {
+                        // keyから座標を抽出 (energy_block_X,Y,Z 形式)
+                        const locationKey = key.replace('energy_block_', '');
+                        dimensionBlocks.add(locationKey);
                     }
                 }
                 

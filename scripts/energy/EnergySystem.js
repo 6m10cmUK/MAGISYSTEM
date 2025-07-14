@@ -3,6 +3,7 @@ import { Constants } from "../core/Constants.js";
 import { Utils } from "../core/Utils.js";
 import { ErrorHandler } from "../core/ErrorHandler.js";
 import { BlockTypeUtils } from "../utils/BlockTypeUtils.js";
+import { storage } from "../utils/DynamicPropertyStorage.js";
 
 export class EnergySystem {
     constructor() {
@@ -42,11 +43,12 @@ export class EnergySystem {
             // スコアボードに値を設定
             const result = block.dimension.runCommand(`scoreboard players set "${key}" ${this.energyObjective} ${Math.floor(amount)}`);
             
-            // Dynamic Propertyに次元情報を保存
-            world.setDynamicProperty(key, block.dimension.id);
-            
-            // エネルギー値もDynamic Propertyに保存（バックアップ）
-            world.setDynamicProperty(`energy_${key}`, Math.floor(amount));
+            // 新しいストレージシステムを使用してバックアップ
+            storage.set(`energy_block_${key}`, {
+                dimension: block.dimension.id,
+                energy: Math.floor(amount),
+                timestamp: Date.now()
+            });
             
             return true;
         }, "EnergySystem.setEnergy", false);
@@ -66,12 +68,12 @@ export class EnergySystem {
                 }
             }
             
-            // スコアボードに値がない場合、Dynamic Propertyから復元を試みる
-            const storedEnergy = world.getDynamicProperty(`energy_${key}`);
-            if (storedEnergy !== undefined) {
+            // スコアボードに値がない場合、新しいストレージシステムから復元を試みる
+            const storedData = storage.get(`energy_block_${key}`);
+            if (storedData && storedData.energy !== undefined) {
                 // 復元した値をスコアボードに設定
-                this.setEnergy(block, storedEnergy);
-                return storedEnergy;
+                this.setEnergy(block, storedData.energy);
+                return storedData.energy;
             }
             
             return 0;
@@ -109,9 +111,8 @@ export class EnergySystem {
             dimension.runCommand(`scoreboard players reset "${key}" ${this.energyObjective}`);
             dimension.runCommand(`scoreboard players reset "${key}" ${this.maxEnergyObjective}`);
             
-            // Dynamic Propertyから削除
-            world.setDynamicProperty(key, undefined);
-            world.setDynamicProperty(`energy_${key}`, undefined);
+            // 新しいストレージシステムから削除
+            storage.delete(`energy_block_${key}`);
             this.clearFuelData(location);
             
             return true;
@@ -189,33 +190,29 @@ export class EnergySystem {
         return Utils.formatEnergy(current, max);
     }
 
-    // 燃料管理機能（shared.jsから移行）
+    // 燃料管理機能（新しいストレージシステムを使用）
     setFuelData(location, fuelData) {
         const key = this.getLocationKey(location);
-        const dataKey = `${this.fuelDataProperty}_${key}`;
         
         return ErrorHandler.safeTry(() => {
-            world.setDynamicProperty(dataKey, JSON.stringify(fuelData));
+            storage.set(`fuel_${key}`, fuelData);
             return true;
         }, "EnergySystem.setFuelData", false);
     }
 
     getFuelData(location) {
         const key = this.getLocationKey(location);
-        const dataKey = `${this.fuelDataProperty}_${key}`;
         
         return ErrorHandler.safeTry(() => {
-            const data = world.getDynamicProperty(dataKey);
-            return data ? JSON.parse(data) : null;
+            return storage.get(`fuel_${key}`, world, null);
         }, "EnergySystem.getFuelData", null);
     }
 
     clearFuelData(location) {
         const key = this.getLocationKey(location);
-        const dataKey = `${this.fuelDataProperty}_${key}`;
         
         return ErrorHandler.safeTry(() => {
-            world.setDynamicProperty(dataKey, undefined);
+            storage.delete(`fuel_${key}`);
             return true;
         }, "EnergySystem.clearFuelData", false);
     }
