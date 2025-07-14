@@ -14,7 +14,7 @@ export class Chalk {
         this.subscription = null; // イベントサブスクリプションを保持
         this.itemUseSubscription = null; // アイテム使用イベントサブスクリプション
         this.playerModes = new Map(); // プレイヤーごとの魔法陣モード
-        this.modes = ["basic", "fire", "water", "air", "earth"]; // 利用可能なモード
+        this.modes = ["basic", "fire", "water", "air", "earth", "start"]; // 利用可能なモード
         try {
             this.registerEvents();
             Logger.info("チョークシステムの初期化完了", "Chalk");
@@ -174,7 +174,7 @@ export class Chalk {
             
             // dimensionから直接ブロックを設置
             block.dimension.setBlockType(location, blockType);
-            Logger.info(`魔法陣を描きました: ${location.x}, ${location.y}, ${location.z} (モード: ${mode})`, "Chalk");
+            Logger.debug(`魔法陣を描きました: ${location.x}, ${location.y}, ${location.z} (モード: ${mode})`, "Chalk");
             
             // 描画音を再生
             player.playSound("item.book.page_turn");
@@ -203,7 +203,7 @@ export class Chalk {
             const currentDamage = durabilityComponent.damage || 0;
             const maxDurability = durabilityComponent.maxDurability;
             
-            Logger.info(`現在の耐久値: ${maxDurability - currentDamage}/${maxDurability}`, "Chalk");
+            Logger.debug(`現在の耐久値: ${maxDurability - currentDamage}/${maxDurability}`, "Chalk");
             
             // 耐久値を1減らす（ダメージを1増やす）
             const newDamage = currentDamage + 1;
@@ -223,7 +223,7 @@ export class Chalk {
                 // 耐久値を更新
                 durabilityComponent.damage = newDamage;
                 const remainingUses = maxDurability - newDamage;
-                Logger.info(`耐久値を更新: ${remainingUses}/${maxDurability}`, "Chalk");
+                Logger.debug(`耐久値を更新: ${remainingUses}/${maxDurability}`, "Chalk");
                 
                 // インベントリのアイテムを更新
                 const inventory = player.getComponent("minecraft:inventory");
@@ -258,7 +258,8 @@ export class Chalk {
                 "fire": "火",
                 "water": "水",
                 "air": "空気",
-                "earth": "大地"
+                "earth": "大地",
+                "start": "始動"
             };
             
             itemStack.nameTag = `チョーク (${modeNames[nextMode]})`;
@@ -274,7 +275,7 @@ export class Chalk {
             player.sendMessage(`チョークモード: ${modeNames[nextMode]}`);
             player.playSound("random.click");
             
-            Logger.info(`プレイヤー ${player.name} がチョークモードを ${nextMode} に変更`, "Chalk");
+            Logger.debug(`プレイヤー ${player.name} がチョークモードを ${nextMode} に変更`, "Chalk");
         } catch (error) {
             Logger.error(`モード切り替えエラー: ${error}`, "Chalk");
         }
