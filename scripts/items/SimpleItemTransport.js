@@ -104,10 +104,18 @@ export class SimpleItemTransport {
      */
     static transferThroughNetwork(sourceBlock, outputPipe, transportManager = null) {
         try {
+            Logger.debug(`ネットワーク輸送開始: ${sourceBlock.typeId} -> ${outputPipe.typeId}`, "SimpleItemTransport");
+            
             // 利用可能な全ての輸送先を探す
             const destinations = this.findAllDestinations(outputPipe);
             
+            Logger.debug(`発見した輸送先: ${destinations.length}個`, "SimpleItemTransport");
+            destinations.forEach((dest, i) => {
+                Logger.debug(`  輸送先${i + 1}: ${dest.typeId} at ${dest.location.x},${dest.location.y},${dest.location.z}`, "SimpleItemTransport");
+            });
+            
             if (destinations.length === 0) {
+                Logger.debug("輸送先が見つからない", "SimpleItemTransport");
                 return 0;
             }
             

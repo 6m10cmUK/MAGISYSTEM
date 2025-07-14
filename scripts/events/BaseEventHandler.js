@@ -50,6 +50,11 @@ export class BaseEventHandler {
      */
     safeSubscribe(eventObject, handler, eventName) {
         try {
+            if (!eventObject || typeof eventObject.subscribe !== 'function') {
+                Logger.error(`無効なイベントオブジェクト: ${eventName}`, this.name);
+                return;
+            }
+            
             const subscription = eventObject.subscribe((event) => {
                 ErrorHandler.safeTry(() => {
                     Logger.startTimer(`${this.name}_${eventName}`);

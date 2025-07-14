@@ -52,6 +52,11 @@ export const Constants = {
         DISPENSER: 'minecraft:dispenser',
     },
 
+    // アイテム
+    ITEMS: {
+        WRENCH: 'magisystem:wrench',
+    },
+
     // ケーブル接続
     CABLE: {
         CHECK_RADIUS: 1,

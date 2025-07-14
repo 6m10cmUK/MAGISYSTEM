@@ -1,0 +1,27 @@
+{
+    "format_version": "1.21.59",
+    "minecraft:recipe_shaped": {
+        "description": {
+            "identifier": "magisystem:wrench"
+        },
+        "tags": ["crafting_table"],
+        "pattern": [
+            " I ",
+            " II",
+            "I  "
+        ],
+        "key": {
+            "I": {
+                "item": "minecraft:iron_ingot"
+            }
+        },
+        "result": {
+            "item": "magisystem:wrench"
+        },
+        "unlock": [
+            {
+                "item": "minecraft:iron_ingot"
+            }
+        ]
+    }
+}

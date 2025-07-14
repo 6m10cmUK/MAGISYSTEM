@@ -88,14 +88,14 @@ export class EnergyNetwork {
             if (visited.has(key)) continue;
             visited.add(key);
             
-            // 入力・出力ケーブルの直接接続をチェック
-            if (this.isEnergyConduit(current) && prevCable && this.isEnergyConduit(prevCable)) {
-                // 両方が入力専用または出力専用の場合、接続不可
-                if ((current.hasTag("energy_input_only") && prevCable.hasTag("energy_output_only")) ||
-                    (current.hasTag("energy_output_only") && prevCable.hasTag("energy_input_only"))) {
-                    continue; // この経路は無効
-                }
-            }
+            // 入力・出力ケーブルの直接接続も許可するように修正
+            // if (this.isEnergyConduit(current) && prevCable && this.isEnergyConduit(prevCable)) {
+            //     // 両方が入力専用または出力専用の場合、接続不可
+            //     if ((current.hasTag("energy_input_only") && prevCable.hasTag("energy_output_only")) ||
+            //         (current.hasTag("energy_output_only") && prevCable.hasTag("energy_input_only"))) {
+            //         continue; // この経路は無効
+            //     }
+            // }
             
             // 開始ブロックを除外するオプション
             if (!(excludeStart && key === startKey)) {

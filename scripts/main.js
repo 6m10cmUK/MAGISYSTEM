@@ -13,6 +13,7 @@ import { itemPipeSystem } from "./pipes/ItemPipeSystem.js";
 import { Utils } from "./core/Utils.js";
 import { machineDataManager } from "./machines/MachineDataManager.js";
 import { autoInfoDisplay } from "./ui/AutoInfoDisplay.js";
+import { wrench } from "./tools/Wrench.js";
 
 // 初期化
 Logger.info("工業MODを初期化中...", "Main");
@@ -30,6 +31,9 @@ class MagisystemMain {
             autoInfoDisplay.initialize();
             // 表示モードをactionbarに設定（JSON UIで位置調整）
             autoInfoDisplay.setDisplayMode('actionbar');
+            
+            // レンチシステムを初期化
+            Logger.info("レンチシステムを初期化", "Main");
             
             // アイテム拾いの防止
             this.registerItemPickupPrevention();

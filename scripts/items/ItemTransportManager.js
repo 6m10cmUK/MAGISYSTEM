@@ -61,22 +61,23 @@ export class ItemTransportManager {
         }
         
         this.isRunning = true;
-        Logger.debug("アイテム輸送システムを開始", "ItemTransportManager");
+        Logger.info("アイテム輸送システムを開始", "ItemTransportManager");
+        Logger.info("開始時の出力パイプ数: 0", "ItemTransportManager");
         
         // 即座にDynamic Propertiesを復元
-        Logger.debug("Dynamic Propertiesからパイプ情報を復元中...", "ItemTransportManager");
+        Logger.info("Dynamic Propertiesからパイプ情報を復元中...", "ItemTransportManager");
         this.restoreFromDynamicProperties();
         
         // 段階的にスキャンを実行
         // Phase 1: 3秒後に登録済みパイプを確認（チャンクロードを待つ）
         system.runTimeout(() => {
-            Logger.debug("Phase 1: 登録済みパイプを確認中...", "ItemTransportManager");
+            Logger.info("Phase 1: 登録済みパイプを確認中...", "ItemTransportManager");
             this.checkAllRegisteredPipes();
         }, 60);
         
         // Phase 2: 5秒後に新規パイプをスキャン
         system.runTimeout(() => {
-            Logger.debug("Phase 2: 新規パイプをスキャン中...", "ItemTransportManager");
+            Logger.info("Phase 2: 新規パイプをスキャン中...", "ItemTransportManager");
             this.scanForExistingOutputPipes();
             
             // 輸送中アイテムの復元
@@ -85,7 +86,7 @@ export class ItemTransportManager {
         
         // Phase 3: 10秒後に再スキャン（確実性のため）
         system.runTimeout(() => {
-            Logger.debug("Phase 3: 最終確認スキャン...", "ItemTransportManager");
+            Logger.info("Phase 3: 最終確認スキャン...", "ItemTransportManager");
             this.checkAllRegisteredPipes();
             this.scanForExistingOutputPipes();
         }, 200);
@@ -318,8 +319,11 @@ export class ItemTransportManager {
                     }
                     
                     // 各インベントリから順番に試行（1つ成功したら終了）
+                    Logger.debug(`輸送元候補: ${sourceBlocks.map(b => b.typeId).join(', ')}`, "ItemTransportManager");
                     for (const sourceBlock of sourceBlocks) {
+                        Logger.debug(`輸送試行: ${sourceBlock.typeId} -> ${outputPipe.typeId}`, "ItemTransportManager");
                         const result = SimpleItemTransport.transferThroughNetwork(sourceBlock, outputPipe, this);
+                        Logger.debug(`輸送結果: ${result}個`, "ItemTransportManager");
                         if (result > 0) {
                             transportedItems += result;
                             transported = true;
@@ -570,15 +574,20 @@ export class ItemTransportManager {
      */
     scanForExistingOutputPipes() {
         Logger.debug("既存の出力パイプをスキャン中...", "ItemTransportManager");
+        Logger.debug(`スキャン開始時の出力パイプ数: ${this.outputPipes.size}`, "ItemTransportManager");
         let scanCount = 0;
         let foundCount = 0;
         let registeredCount = 0;
         
         try {
             // 登録済みパイプをチェック（新しいDynamic Properties形式）
+            Logger.debug("登録済みパイプをチェック中...", "ItemTransportManager");
             this.checkAllRegisteredPipes();
+            Logger.debug(`checkAllRegisteredPipes後の出力パイプ数: ${this.outputPipes.size}`, "ItemTransportManager");
+            
             // 現在のディメンションのプレイヤーを取得
             const players = world.getAllPlayers();
+            Logger.debug(`発見したプレイヤー数: ${players.length}`, "ItemTransportManager");
             
             if (players.length === 0) {
                 Logger.warn("プレイヤーが見つかりません。スキャンを延期します。", "ItemTransportManager");
@@ -592,6 +601,7 @@ export class ItemTransportManager {
             // プレイヤーごとに非同期でスキャン
             for (let i = 0; i < players.length; i++) {
                 const player = players[i];
+                Logger.debug(`プレイヤー${i + 1}/${players.length}: ${player.name} のスキャンを開始`, "ItemTransportManager");
                 // プレイヤーごとに遅延を設けてスキャン
                 system.runTimeout(() => {
                     this.scanAroundPlayer(player);
@@ -611,6 +621,7 @@ export class ItemTransportManager {
         
         try {
             const properties = world.getDynamicPropertyIds();
+            Logger.info(`Dynamic Properties総数: ${properties.length}`, "ItemTransportManager");
             
             for (const prop of properties) {
                 if (prop.startsWith("magisystem:outputpipe_")) {
@@ -628,11 +639,12 @@ export class ItemTransportManager {
                         });
                         
                         restoredCount++;
+                        Logger.info(`復元したパイプ: ${coordStr} (dimension: ${dimensionId})`, "ItemTransportManager");
                     }
                 }
             }
             
-            Logger.debug(`${restoredCount}個のパイプ位置を復元`, "ItemTransportManager");
+            Logger.info(`${restoredCount}個のパイプ位置を復元`, "ItemTransportManager");
         } catch (error) {
             Logger.error(`Dynamic Properties復元エラー: ${error}`, "ItemTransportManager");
         }
@@ -715,6 +727,9 @@ export class ItemTransportManager {
      */
     scanAroundLocation(center, dimension, radius) {
         let foundCount = 0;
+        let scanCount = 0;
+        
+        Logger.debug(`位置${center.x},${center.y},${center.z}周辺の半径${radius}をスキャン開始`, "ItemTransportManager");
         
         // 効率的なスキャン（4ブロックごと）
         for (let x = -radius; x <= radius; x += 4) {
@@ -728,11 +743,13 @@ export class ItemTransportManager {
                     
                     try {
                         const block = dimension.getBlock(location);
+                        scanCount++;
                         if (block?.typeId === "magisystem:pipe_output") {
                             const key = Utils.locationToKey(location);
                             if (!this.outputPipes.has(key)) {
                                 this.registerOutputPipeInternal(block);
                                 foundCount++;
+                                Logger.debug(`新規出力パイプ発見: ${key}`, "ItemTransportManager");
                             }
                         }
                     } catch (error) {
@@ -742,9 +759,7 @@ export class ItemTransportManager {
             }
         }
         
-        if (foundCount > 0) {
-            Logger.debug(`${foundCount}個の新規出力パイプを発見`, "ItemTransportManager");
-        }
+        Logger.debug(`スキャン完了: ${scanCount}ブロック確認, ${foundCount}個の新規出力パイプを発見`, "ItemTransportManager");
     }
     
     /**
@@ -806,7 +821,8 @@ export class ItemTransportManager {
         let activatedCount = 0;
         let skippedCount = 0;
         
-        Logger.debug(`登録済みパイプをチェック: ${this.chunkDetection.registeredPipes.size}個`, "ItemTransportManager");
+        Logger.debug(`登録済みパイプをチェック: ${this.chunkDetection.registeredPipes.size}個 (forceActivate: ${forceActivate})`, "ItemTransportManager");
+        Logger.debug(`チェック開始時のアクティブ出力パイプ数: ${this.outputPipes.size}`, "ItemTransportManager");
         
         for (const [propKey, pipeData] of this.chunkDetection.registeredPipes) {
             try {

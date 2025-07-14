@@ -152,9 +152,9 @@ export class BaseTransportSystem {
 
         let result = false;
 
-        // 専用ブロック同士は接続しない
+        // 専用ブロック同士も接続できるように変更
         if (this.isDedicatedBlock(transportType) && this.isDedicatedBlock(adjacentType)) {
-            result = false;
+            result = true;
         }
         // 通常ブロックは他の輸送ブロックとのみ接続
         else if (this.isNormalBlock(transportType)) {
