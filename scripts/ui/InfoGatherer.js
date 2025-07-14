@@ -232,9 +232,11 @@ export class InfoGatherer {
      * @returns {string} 表示名
      */
     static getBlockDisplayName(typeId) {
+        if (!typeId) return "Unknown Block";
+        
         // DisplayNameRegistryから取得を試みる
         const customName = DisplayNameRegistry.getBlockName(typeId);
-        if (customName) {
+        if (customName && customName !== typeId) {
             return customName;
         }
 

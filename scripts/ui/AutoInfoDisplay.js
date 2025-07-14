@@ -53,7 +53,7 @@ export class AutoInfoDisplay {
             lastDisplayText: null,
             lastUpdateTick: 0
         });
-        Logger.debug(`プレイヤー ${player.name} の表示状態を初期化`, "AutoInfoDisplay");
+        Logger.debug(`プレイヤー ${player.name || player.id} の表示状態を初期化`, "AutoInfoDisplay");
     }
 
     /**
@@ -71,9 +71,10 @@ export class AutoInfoDisplay {
         const currentTick = system.currentTick;
         
         for (const player of players) {
+            if (!player || !player.id) continue;
             ErrorHandler.safeTry(() => {
                 this.updatePlayer(player, currentTick);
-            }, `AutoInfoDisplay.updatePlayer[${player.name}]`);
+            }, `AutoInfoDisplay.updatePlayer[${player.name || player.id}]`);
         }
     }
 

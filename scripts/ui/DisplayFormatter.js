@@ -11,13 +11,13 @@ export class DisplayFormatter {
      * @returns {string} フォーマット済み文字列
      */
     static formatForActionBar(info) {
-        if (!info) return "";
+        if (!info || !info.data) return "";
 
         const parts = [];
 
-        // すべてのブロックに対してまず名前を表示
+        // すべてのブロックに対してまず名前を表示（ID付き）
         if (info.data.displayName) {
-            parts.push(`§e${info.data.displayName}`);
+            parts.push(`§e${info.data.displayName} §7§o${info.typeId}§r`);
         }
 
         switch (info.type) {
