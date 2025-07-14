@@ -24,15 +24,25 @@ export class DisplayFormatter {
             case "energy":
                 if (info.data.isActive !== undefined) {
                     // 発電機
-                    if (info.data.isActive && info.data.generationRate) {
-                        parts.push(`§7発電: §a${info.data.generationRate} MF/s`);
+                    if (info.data.generationRate) {
+                        if (info.data.isActive) {
+                            parts.push(`§7発電: §a${info.data.generationRate} MF/s`);
+                            if (info.data.fuelItem) {
+                                // 燃料アイテムの表示名を取得
+                                const fuelName = InfoGatherer.getItemDisplayName(info.data.fuelItem);
+                                const burnRemaining = info.data.maxBurnTime > 0
+                                    ? Math.round(info.data.burnTime / info.data.maxBurnTime * 100)
+                                    : 0;
+                                parts.push(`§7燃焼中: §e${fuelName} §7(§a${burnRemaining}%§7)`);
+                            }
+                        } else {
+                            parts.push(`§7待機中`);
+                        }
                     }
                     // 電気炉の場合
                     else if (info.data.smeltTime !== undefined) {
                         if (info.data.isActive) {
-                            parts.push(`§7精錬中: §e${info.data.inputItem ? info.data.inputItem.replace('minecraft:', '') : 'なし'}`);
-                            parts.push(`§7進捗: §a${info.data.smeltProgress}%`);
-                            parts.push(`§7残り: §f${Math.ceil(info.data.smeltTime / 20)}秒`);
+                            parts.push(`§7精錬中: §e${info.data.inputItem ? info.data.inputItem.replace('minecraft:', '') : 'なし'}(§a${info.data.smeltProgress}%§7)`);
                         } else if (info.data.energy < info.data.energyPerTick) {
                             parts.push(`§cエネルギー不足`);
                         } else {
@@ -40,7 +50,9 @@ export class DisplayFormatter {
                         }
                     }
                 }
-                parts.push(`§f${InfoGatherer.formatNumber(info.data.energy)}/${InfoGatherer.formatNumber(info.data.maxEnergy)} MF(§f${info.data.percent}%)`);
+                // バッテリーインジケーター表示
+                const indicator = this.createEnergyIndicator(info.data.percent);
+                parts.push(`${indicator} §f${InfoGatherer.formatNumber(info.data.energy)}/${InfoGatherer.formatNumber(info.data.maxEnergy)} MF`);
                 break;
 
             case "cable":
@@ -60,9 +72,6 @@ export class DisplayFormatter {
             case "inventory":
                 parts.push(`§7アイテム: §f${info.data.itemCount}個`);
                 parts.push(`§7スロット: §f${info.data.slotCount}/${info.data.totalSlots}`);
-                if (info.data.pipeConnections > 0) {
-                    parts.push(`§7パイプ: §a${info.data.pipeConnections}方向`);
-                }
                 break;
 
             case "basic":
@@ -74,5 +83,46 @@ export class DisplayFormatter {
         return parts.join("\n");
     }
 
+    /**
+     * エネルギーインジケーターを作成
+     * @param {number} percent - パーセンテージ（0-100）
+     * @returns {string} インジケーター文字列
+     */
+    static createEnergyIndicator(percent) {
+        const totalBars = 10;
+        const filledBars = Math.round(percent / 10);
+        const emptyBars = totalBars - filledBars;
+        
+        let indicator = '§8[';
+        
+        // 色を決定（残量に応じて）
+        let color;
+        if (percent >= 60) {
+            color = '§a'; // 緑
+        } else if (percent >= 30) {
+            color = '§e'; // 黄
+        } else {
+            color = '§c'; // 赤
+        }
 
+        const indicator_icon = '=';  // Black Diamond
+        
+        // バーを生成
+        indicator += color;
+        for (let i = 0; i < filledBars; i++) {
+            indicator += indicator_icon;
+        }
+        
+        indicator += '§8';
+        for (let i = 0; i < emptyBars; i++) {
+            indicator += indicator_icon;
+        }
+        
+        indicator += '§8]';
+        
+        // パーセンテージも追加
+        indicator += ` ${color}${percent}%§r`;
+        
+        return indicator;
+    }
 }

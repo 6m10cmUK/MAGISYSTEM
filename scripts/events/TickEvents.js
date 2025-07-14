@@ -215,6 +215,8 @@ export class TickEvents extends BaseEventHandler {
             const players = world.getAllPlayers();
             
             for (const player of players) {
+                if (!player || !player.location) continue; // プレイヤーが無効な場合はスキップ
+                
                 // プレイヤーの周辺のケーブルのみ更新（パフォーマンス最適化）
                 const nearbyRadius = 16; // ブロック
                 const playerLoc = player.location;

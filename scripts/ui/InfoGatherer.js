@@ -265,4 +265,28 @@ export class InfoGatherer {
         }
         return num.toString();
     }
+
+    /**
+     * アイテムの表示名を取得
+     * @param {string} itemId - アイテムID
+     * @returns {string} 表示名
+     */
+    static getItemDisplayName(itemId) {
+        if (!itemId) return "Unknown Item";
+        
+        // DisplayNameRegistryから取得を試みる
+        const customName = DisplayNameRegistry.getItemName(itemId);
+        if (customName && customName !== itemId) {
+            return customName;
+        }
+
+        // デフォルトの変換処理
+        const cleanName = itemId
+            .replace(/^minecraft:/, '')
+            .replace(/^magisystem:/, '')
+            .replace(/_/g, ' ')
+            .replace(/\b\w/g, l => l.toUpperCase());
+        
+        return cleanName;
+    }
 }

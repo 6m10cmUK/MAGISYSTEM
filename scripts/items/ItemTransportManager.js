@@ -658,6 +658,8 @@ export class ItemTransportManager {
         const tracking = this.chunkDetection.playerTracking;
         
         for (const player of players) {
+            if (!player || !player.id) continue; // プレイヤーが無効な場合はスキップ
+            
             const playerId = player.id;
             const currentPos = player.location;
             const lastPos = tracking.positions.get(playerId);
