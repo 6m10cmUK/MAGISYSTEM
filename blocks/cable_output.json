@@ -4,7 +4,7 @@
     "description": {
       "identifier": "magisystem:cable_output",
       "menu_category": {
-        "category": "items"
+        "category": "none"
       },
       "states": {
         "magisystem:above": ["none", "cable", "block"],
@@ -57,9 +57,6 @@
       "minecraft:selection_box": {
         "origin": [-4, 4, -4],
         "size": [8, 8, 8]
-      },
-      "minecraft:creative_category": {
-        "category": "none"
       },
       "tag:mf_cable": {},
       "tag:energy_conduit": {},

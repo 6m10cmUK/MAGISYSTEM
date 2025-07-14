@@ -78,12 +78,6 @@ export class DisplayFormatter {
                     };
                     parts.push(`§7状態: ${modeDisplay[info.data.mode] || '§7通常'}`);
                 }
-                if (info.data.connections) {
-                    parts.push(`§7接続: §a${info.data.connections}方向`);
-                }
-                if (info.data.transportManager && info.data.transportManager.running) {
-                    parts.push(`§7輸送元: §f${info.data.transportManager.sources}`);
-                }
                 break;
 
             case "inventory":
