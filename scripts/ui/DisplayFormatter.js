@@ -56,11 +56,28 @@ export class DisplayFormatter {
                 break;
 
             case "cable":
+                // モード表示を追加
+                if (info.data.mode) {
+                    const modeDisplay = {
+                        'normal': '§7通常',
+                        'input': '§a入力',
+                        'output': '§c出力'
+                    };
+                    parts.push(`§7状態: ${modeDisplay[info.data.mode] || '§7通常'}`);
+                }
                 parts.push(`§7転送速度: §a${info.data.transferRate} MF/tick`);
                 break;
 
             case "pipe":
-                parts.push(`§7アイテムパイプ`);
+                // モード表示を追加
+                if (info.data.mode) {
+                    const modeDisplay = {
+                        'normal': '§7通常',
+                        'input': '§a入力',
+                        'output': '§c出力'
+                    };
+                    parts.push(`§7状態: ${modeDisplay[info.data.mode] || '§7通常'}`);
+                }
                 if (info.data.connections) {
                     parts.push(`§7接続: §a${info.data.connections}方向`);
                 }

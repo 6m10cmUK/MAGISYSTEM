@@ -58,6 +58,9 @@
         "origin": [-4, 4, -4],
         "size": [8, 8, 8]
       },
+      "minecraft:creative_category": {
+        "category": "none"
+      },
       "tag:mf_cable": {},
       "tag:energy_conduit": {},
       "tag:energy_output_only": {}

@@ -93,13 +93,21 @@ export class InfoGatherer {
     static gatherCableInfo(block) {
         const info = {
             type: "cable",
-            typeId: block.typeId,
+            typeId: "magisystem:cable", // ID統一
             data: {
-                displayName: this.getBlockDisplayName(block.typeId),
+                displayName: "エネルギーケーブル", // 統一表示名
                 transferRate: Constants.ENERGY.MAX_TRANSFER_PER_TICK
             }
         };
 
+        // モード判定
+        if (block.typeId === Constants.BLOCK_TYPES.CABLE_INPUT) {
+            info.data.mode = 'input';
+        } else if (block.typeId === Constants.BLOCK_TYPES.CABLE_OUTPUT) {
+            info.data.mode = 'output';
+        } else {
+            info.data.mode = 'normal';
+        }
 
         return info;
     }
@@ -112,12 +120,21 @@ export class InfoGatherer {
     static async gatherPipeInfo(block) {
         const info = {
             type: "pipe",
-            typeId: block.typeId,
+            typeId: "magisystem:pipe", // ID統一
             data: {
-                displayName: this.getBlockDisplayName(block.typeId),
+                displayName: "アイテムパイプ", // 統一表示名
                 transferRate: 1 // アイテム/tick
             }
         };
+
+        // モード判定
+        if (block.typeId === Constants.BLOCK_TYPES.PIPE_INPUT) {
+            info.data.mode = 'input';
+        } else if (block.typeId === Constants.BLOCK_TYPES.PIPE_OUTPUT) {
+            info.data.mode = 'output';
+        } else {
+            info.data.mode = 'normal';
+        }
 
         // 接続情報
         const connectionInfo = itemPipeSystem.getConnectionInfo(block);

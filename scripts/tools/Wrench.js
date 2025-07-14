@@ -130,14 +130,7 @@ export class Wrench {
                 // 接続パターンを更新
                 mfCableSystem.updatePattern(newBlock, true);
                 
-                // 成功メッセージを表示
-                const modeNames = {
-                    [Constants.BLOCK_TYPES.CABLE]: "通常モード",
-                    [Constants.BLOCK_TYPES.CABLE_INPUT]: "入力モード",
-                    [Constants.BLOCK_TYPES.CABLE_OUTPUT]: "出力モード"
-                };
-                
-                player.sendMessage(`§a[レンチ] ケーブルを${modeNames[nextType]}に変更しました`);
+                // メッセージ削除
                 Logger.debug(`ケーブルモード変更成功: ${currentType} → ${nextType}`, "Wrench");
             } else {
                 Logger.error("新しいブロックの取得に失敗", "Wrench");
@@ -196,14 +189,7 @@ export class Wrench {
                     itemTransportManager.onPipeRemoved(block.location, block.dimension);
                 }
                 
-                // 成功メッセージを表示
-                const modeNames = {
-                    [Constants.BLOCK_TYPES.PIPE]: "通常モード",
-                    [Constants.BLOCK_TYPES.PIPE_INPUT]: "入力モード",
-                    [Constants.BLOCK_TYPES.PIPE_OUTPUT]: "出力モード"
-                };
-                
-                player.sendMessage(`§a[レンチ] パイプを${modeNames[nextType]}に変更しました`);
+                // メッセージ削除
                 Logger.debug(`パイプモード変更成功: ${currentType} → ${nextType}`, "Wrench");
             } else {
                 Logger.error("新しいパイプブロックの取得に失敗", "Wrench");
