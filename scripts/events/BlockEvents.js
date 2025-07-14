@@ -10,7 +10,6 @@ import { generator } from "../machines/Generator.js";
 import { creativeGenerator } from "../machines/CreativeGenerator.js";
 import { battery } from "../machines/Battery.js";
 import { electricFurnace } from "../machines/ElectricFurnace.js";
-import { seebeckGenerator } from "../machines/SeebeckGenerator.js";
 import { mfCableSystem } from "../cables/MFCableSystem.js";
 import { itemPipeSystem } from "../pipes/ItemPipeSystem.js";
 import { itemTransportManager } from "../items/ItemTransportManager.js";
@@ -37,7 +36,6 @@ export class BlockEvents extends BaseEventHandler {
             [Constants.BLOCK_TYPES.PIPE_INPUT, this.handlePipePlace.bind(this)],
             [Constants.BLOCK_TYPES.PIPE_OUTPUT, this.handlePipePlace.bind(this)],
             [Constants.BLOCK_TYPES.ELECTRIC_FURNACE, this.handleElectricFurnacePlace.bind(this)],
-            ['magisystem:seebeck_generator', this.handleSeebeckGeneratorPlace.bind(this)],
         ]);
     }
 
@@ -246,16 +244,6 @@ export class BlockEvents extends BaseEventHandler {
         this.updateAdjacentPipes(block);
     }
     
-    handleSeebeckGeneratorPlace(block, player) {
-        Logger.info(`ゼーベック発電機を配置: ${block.typeId}`, this.name);
-        const result = seebeckGenerator.registerSeebeckGenerator(block);
-        
-        Logger.info(`ゼーベック発電機登録結果: ${result}, 位置: ${Utils.locationToKey(block.location)}`, "BlockEvents");
-        
-        BlockUtils.playSound(block, Constants.SOUNDS.BLOCK_PLACE, { volume: 0.8 });
-        mfCableSystem.updateAdjacentBlocks(block);
-        this.sendDebugMessage(player, `ゼーベック発電機を配置: ${Utils.locationToKey(block.location)}`);
-    }
 
     handleCablePlace(block, player) {
         mfCableSystem.onBlockPlaced(block);
@@ -330,10 +318,7 @@ export class BlockEvents extends BaseEventHandler {
             // 隣接するパイプを更新
             this.updateAdjacentPipesAtLocation(location, dimension);
         }
-        // ゼーベック発電機の場合
-        else if (typeId === 'magisystem:seebeck_generator') {
-            seebeckGenerator.unregisterSeebeckGenerator(location, dimension);
-        } else {
+ else {
             // 他のエネルギーブロックは通常のドロップ
             this.dropStoredEnergy(location, dimension, brokenPermutation);
         }

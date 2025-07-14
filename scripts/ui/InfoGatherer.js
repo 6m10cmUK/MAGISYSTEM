@@ -25,7 +25,9 @@ export class InfoGatherer {
         const info = {
             type: "energy",
             typeId: typeId,
-            data: {}
+            data: {
+                displayName: this.getBlockDisplayName(typeId)
+            }
         };
 
         // 基本エネルギー情報
@@ -63,16 +65,6 @@ export class InfoGatherer {
                 info.data.transferRate = batteryInfo.transferRate;
             }
         }
-        // ゼーベック発電機
-        else if (typeId === 'magisystem:seebeck_generator') {
-            const { seebeckGenerator } = await import("../machines/SeebeckGenerator.js");
-            const genInfo = seebeckGenerator.getSeebeckGeneratorInfo(block);
-            if (genInfo) {
-                info.data.isActive = genInfo.isGenerating;
-                info.data.generationRate = seebeckGenerator.generationRate;
-                info.data.requiresLavaAndWater = true;
-            }
-        }
         // 電気炉
         else if (typeId === Constants.BLOCK_TYPES.ELECTRIC_FURNACE) {
             const key = energySystem.getLocationKey(block.location);
@@ -103,6 +95,7 @@ export class InfoGatherer {
             type: "cable",
             typeId: block.typeId,
             data: {
+                displayName: this.getBlockDisplayName(block.typeId),
                 transferRate: Constants.ENERGY.MAX_TRANSFER_PER_TICK
             }
         };
@@ -121,6 +114,7 @@ export class InfoGatherer {
             type: "pipe",
             typeId: block.typeId,
             data: {
+                displayName: this.getBlockDisplayName(block.typeId),
                 transferRate: 1 // アイテム/tick
             }
         };
@@ -169,6 +163,7 @@ export class InfoGatherer {
             type: "inventory",
             typeId: block.typeId,
             data: {
+                displayName: this.getBlockDisplayName(block.typeId),
                 itemCount: 0,
                 slotCount: 0,
                 totalSlots: 0,
@@ -221,7 +216,38 @@ export class InfoGatherer {
             return this.gatherInventoryInfo(block);
         }
 
-        return null;
+        // すべてのブロックに対して基本情報を返す
+        return {
+            type: "basic",
+            typeId: typeId,
+            data: {
+                displayName: this.getBlockDisplayName(typeId)
+            }
+        };
+    }
+
+    /**
+     * ブロックの表示名を取得
+     * @param {string} typeId - ブロックタイプID
+     * @returns {string} 表示名
+     */
+    static getBlockDisplayName(typeId) {
+        // DisplayNameRegistryから取得を試みる
+        const customName = DisplayNameRegistry.getBlockName(typeId);
+        if (customName) {
+            return customName;
+        }
+
+        // デフォルトの変換処理
+        // minecraft:stone -> Stone
+        // magisystem:cable_input -> Cable Input
+        const cleanName = typeId
+            .replace(/^minecraft:/, '')
+            .replace(/^magisystem:/, '')
+            .replace(/_/g, ' ')
+            .replace(/\b\w/g, l => l.toUpperCase());
+        
+        return cleanName;
     }
 
     /**

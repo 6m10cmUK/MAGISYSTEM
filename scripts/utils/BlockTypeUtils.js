@@ -23,8 +23,7 @@ export class BlockTypeUtils {
         return typeId === Constants.BLOCK_TYPES.GENERATOR ||
                typeId === Constants.BLOCK_TYPES.THERMAL_GENERATOR ||
                typeId === Constants.BLOCK_TYPES.CREATIVE_GENERATOR ||
-               typeId === Constants.BLOCK_TYPES.SOLAR_GENERATOR ||
-               typeId === 'magisystem:seebeck_generator';
+               typeId === Constants.BLOCK_TYPES.SOLAR_GENERATOR;
     }
 
     /**

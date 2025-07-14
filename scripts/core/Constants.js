@@ -76,8 +76,6 @@ export const Constants = {
         CREATIVE_OUTPUT: 100, // MF/tick (クリエイティブ発電機)
         SOLAR_OUTPUT_DAY: 5, // MF/tick
         SOLAR_OUTPUT_NIGHT: 0, // MF/tick
-        SEEBECK_OUTPUT: 15, // MF/tick
-        SEEBECK_CAPACITY: 10000, // MF
     },
 
     // バッテリー設定

@@ -15,19 +15,16 @@ export class DisplayFormatter {
 
         const parts = [];
 
+        // すべてのブロックに対してまず名前を表示
+        if (info.data.displayName) {
+            parts.push(`§e${info.data.displayName}`);
+        }
+
         switch (info.type) {
             case "energy":
                 if (info.data.isActive !== undefined) {
-                    // ゼーベック発電機の場合
-                    if (info.data.requiresLavaAndWater) {
-                        if (info.data.isActive) {
-                            parts.push(`§7状態: §a発電中 (${info.data.generationRate} MF/s)`);
-                        } else {
-                            parts.push(`§7状態: §c停止中 (溶岩と水が必要)`);
-                        }
-                    }
-                    // その他の発電機
-                    else if (info.data.isActive && info.data.generationRate) {
+                    // 発電機
+                    if (info.data.isActive && info.data.generationRate) {
                         parts.push(`§7発電: §a${info.data.generationRate} MF/s`);
                     }
                     // 電気炉の場合
@@ -46,6 +43,20 @@ export class DisplayFormatter {
                 parts.push(`§f${InfoGatherer.formatNumber(info.data.energy)}/${InfoGatherer.formatNumber(info.data.maxEnergy)} MF(§f${info.data.percent}%)`);
                 break;
 
+            case "cable":
+                parts.push(`§7転送速度: §a${info.data.transferRate} MF/tick`);
+                break;
+
+            case "pipe":
+                parts.push(`§7アイテムパイプ`);
+                if (info.data.connections) {
+                    parts.push(`§7接続: §a${info.data.connections}方向`);
+                }
+                if (info.data.transportManager && info.data.transportManager.running) {
+                    parts.push(`§7輸送元: §f${info.data.transportManager.sources}`);
+                }
+                break;
+
             case "inventory":
                 parts.push(`§7アイテム: §f${info.data.itemCount}個`);
                 parts.push(`§7スロット: §f${info.data.slotCount}/${info.data.totalSlots}`);
@@ -53,9 +64,15 @@ export class DisplayFormatter {
                     parts.push(`§7パイプ: §a${info.data.pipeConnections}方向`);
                 }
                 break;
+
+            case "basic":
+                // 基本ブロックの場合は名前のみ（既に追加済み）
+                break;
         }
 
-        return parts.join(" §r| ");
+        // 改行で複数行表示に対応
+        return parts.join("\n");
     }
+
 
 }

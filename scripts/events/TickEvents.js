@@ -10,7 +10,6 @@ import { generator } from "../machines/Generator.js";
 import { creativeGenerator } from "../machines/CreativeGenerator.js";
 import { battery } from "../machines/Battery.js";
 import { electricFurnace } from "../machines/ElectricFurnace.js";
-import { seebeckGenerator } from "../machines/SeebeckGenerator.js";
 import { itemNetwork } from "../items/ItemNetwork.js";
 import { itemTransportManager } from "../items/ItemTransportManager.js";
 import { Constants } from "../core/Constants.js";
@@ -200,10 +199,6 @@ export class TickEvents extends BaseEventHandler {
         // 電気炉の更新
         else if (typeId === Constants.BLOCK_TYPES.ELECTRIC_FURNACE) {
             electricFurnace.update(block);
-        }
-        // ゼーベック発電機の更新
-        else if (typeId === 'magisystem:seebeck_generator') {
-            seebeckGenerator.updateSeebeckGenerator(block);
         }
         // その他の機械（将来の実装用）
         else if (typeId === Constants.BLOCK_TYPES.IRON_FURNACE) {

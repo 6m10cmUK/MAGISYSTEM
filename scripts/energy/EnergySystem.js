@@ -128,7 +128,6 @@ export class EnergySystem {
             [Constants.BLOCK_TYPES.THERMAL_GENERATOR]: 4000,  // 熱発電機
             [Constants.BLOCK_TYPES.SOLAR_GENERATOR]: 10000,  // ソーラー発電機
             [Constants.BLOCK_TYPES.CREATIVE_GENERATOR]: 10000,  // クリエイティブ発電機（大容量バッファ）
-            'magisystem:seebeck_generator': Constants.GENERATOR.SEEBECK_CAPACITY,  // ゼーベック発電機
             [Constants.BLOCK_TYPES.BATTERY]: 50000,
             [Constants.BLOCK_TYPES.BATTERY_BASIC]: 50000,
             [Constants.BLOCK_TYPES.BATTERY_ADVANCED]: 200000,
@@ -165,7 +164,6 @@ export class EnergySystem {
             Constants.BLOCK_TYPES.GENERATOR,
             Constants.BLOCK_TYPES.THERMAL_GENERATOR,
             Constants.BLOCK_TYPES.CREATIVE_GENERATOR,
-            'magisystem:seebeck_generator',
             Constants.BLOCK_TYPES.BATTERY_BASIC,
             Constants.BLOCK_TYPES.BATTERY_ADVANCED,
             Constants.BLOCK_TYPES.BATTERY_ULTIMATE

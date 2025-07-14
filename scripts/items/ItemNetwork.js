@@ -1,5 +1,6 @@
 import { world, system, ItemStack } from "@minecraft/server";
 import { itemPipeSystem } from "../pipes/ItemPipeSystem.js";
+import { Logger } from "../core/Logger.js";
 
 export class ItemNetwork {
     constructor() {
@@ -190,7 +191,7 @@ export class ItemNetwork {
         const queue = [startBlock];
         const visited = new Set();
         
-        console.log(`[ItemNetwork] ネットワーク探索開始: ${startBlock.typeId} at ${this.getLocationKey(startBlock.location)}`);
+        Logger.debug(`ネットワーク探索開始: ${startBlock.typeId} at ${this.getLocationKey(startBlock.location)}`, "ItemNetwork");
         
         while (queue.length > 0 && network.size < this.maxSearchDistance) {
             const current = queue.shift();
@@ -203,7 +204,7 @@ export class ItemNetwork {
             if (!(excludeStart && current === startBlock)) {
                 // インベントリを持つブロック（パイプ以外）をネットワークに追加
                 if (itemPipeSystem.hasInventory(current) && !this.isItemConduit(current)) {
-                    console.log(`[ItemNetwork] インベントリブロック発見: ${current.typeId}`);
+                    Logger.debug(`インベントリブロック発見: ${current.typeId}`, "ItemNetwork");
                     network.set(key, current);
                 }
             }
@@ -211,7 +212,7 @@ export class ItemNetwork {
             // パイプまたはインベントリブロックの場合、隣接ブロックを探索
             if (this.isItemConduit(current) || itemPipeSystem.hasInventory(current)) {
                 const adjacents = this.getAdjacentBlocks(current);
-                console.log(`[ItemNetwork] ${current.typeId}の隣接ブロックを探索 (${adjacents.length}個)`);
+                Logger.debug(`${current.typeId}の隣接ブロックを探索 (${adjacents.length}個)`, "ItemNetwork");
                 
                 for (const adj of adjacents) {
                     const adjKey = this.getLocationKey(adj.block.location);
@@ -221,12 +222,12 @@ export class ItemNetwork {
                     
                     // パイプの場合
                     if (this.isItemConduit(adj.block)) {
-                        console.log(`[ItemNetwork] パイプ発見: ${adj.block.typeId}`);
+                        Logger.debug(`パイプ発見: ${adj.block.typeId}`, "ItemNetwork");
                         queue.push(adj.block);
                     }
                     // インベントリブロックの場合
                     else if (itemPipeSystem.hasInventory(adj.block)) {
-                        console.log(`[ItemNetwork] インベントリブロック候補: ${adj.block.typeId}`);
+                        Logger.debug(`インベントリブロック候補: ${adj.block.typeId}`, "ItemNetwork");
                         queue.push(adj.block);
                     }
                 }
@@ -245,7 +246,7 @@ export class ItemNetwork {
             const extractedItem = this.extractItems(sourceBlock, maxItems);
             if (!extractedItem) return 0;
             
-            console.log(`[ItemNetwork] 抽出アイテム: ${extractedItem.typeId} x${extractedItem.amount}`);
+            Logger.debug(`抽出アイテム: ${extractedItem.typeId} x${extractedItem.amount}`, "ItemNetwork");
             
             const originalAmount = extractedItem.amount; // 元の数量を保存
 
@@ -255,13 +256,13 @@ export class ItemNetwork {
             for (const adj of adjacents) {
                 if (adj.block.typeId === "magisystem:pipe_output") {
                     outputPipe = adj.block;
-                    console.log(`[ItemNetwork] 出力パイプ発見`);
+                    Logger.debug(`出力パイプ発見`, "ItemNetwork");
                     break;
                 }
             }
             
             if (!outputPipe) {
-                console.log(`[ItemNetwork] 出力パイプが見つかりません`);
+                Logger.debug(`出力パイプが見つかりません`, "ItemNetwork");
                 if (extractedItem.amount > 0) {
                     this.insertItems(sourceBlock, extractedItem);
                 }
@@ -270,7 +271,7 @@ export class ItemNetwork {
 
             // 出力パイプから接続されたネットワークを探索
             const network = this.findConnectedNetwork(outputPipe, true);
-            console.log(`[ItemNetwork] ネットワークサイズ: ${network.size}`);
+            Logger.debug(`ネットワークサイズ: ${network.size}`, "ItemNetwork");
         
         // 受け入れ可能なインベントリを探す
         const receivers = [];
@@ -282,7 +283,7 @@ export class ItemNetwork {
         
         if (receivers.length === 0) {
             // 受け入れ先がない場合、アイテムを元に戻す
-            console.log(`[ItemNetwork] 受け入れ先なし。アイテムを元に戻す: ${extractedItem.typeId} x${extractedItem.amount}`);
+            Logger.debug(`受け入れ先なし。アイテムを元に戻す: ${extractedItem.typeId} x${extractedItem.amount}`, "ItemNetwork");
             if (extractedItem.amount > 0) {
                 this.insertItems(sourceBlock, extractedItem);
             }

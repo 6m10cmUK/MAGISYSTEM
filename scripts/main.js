@@ -2,7 +2,6 @@ import { world, system } from "@minecraft/server";
 import { blockEvents } from "./events/BlockEvents.js";
 import { tickEvents } from "./events/TickEvents.js";
 import { itemPickupEvents } from "./events/ItemPickupEvents.js";
-import { Wrench } from "./tools/Wrench.js";
 import { generator } from "./machines/Generator.js";
 import { electricFurnace } from "./machines/ElectricFurnace.js";
 import { Constants } from "./core/Constants.js";
@@ -13,7 +12,7 @@ import { itemTransportManager } from "./items/ItemTransportManager.js";
 import { itemPipeSystem } from "./pipes/ItemPipeSystem.js";
 import { Utils } from "./core/Utils.js";
 import { machineDataManager } from "./machines/MachineDataManager.js";
-// import { burnProgressDisplay } from "./ui/BurnProgressDisplay.js";
+import { autoInfoDisplay } from "./ui/AutoInfoDisplay.js";
 
 // 初期化
 Logger.info("工業MODを初期化中...", "Main");
@@ -26,7 +25,11 @@ class MagisystemMain {
             blockEvents.register();
             tickEvents.register();
             itemPickupEvents.register();
-            Wrench.register();
+            
+            // 自動情報表示システムを初期化
+            autoInfoDisplay.initialize();
+            // 表示モードをactionbarに設定（JSON UIで位置調整）
+            autoInfoDisplay.setDisplayMode('actionbar');
             
             // アイテム拾いの防止
             this.registerItemPickupPrevention();
@@ -44,8 +47,7 @@ class MagisystemMain {
             machineDataManager.registerMachine('generator', generator);
             machineDataManager.registerMachine('electricFurnace', electricFurnace);
             
-            // 燃焼進行状況表示システムは削除
-            // burnProgressDisplay.initialize();
+            // レンチシステムは削除（自動情報表示に置き換え）
             
             Logger.info("すべてのシステムが正常に読み込まれました！", "Main");
         } catch (error) {
