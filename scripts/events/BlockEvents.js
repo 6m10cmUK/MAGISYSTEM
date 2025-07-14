@@ -411,8 +411,7 @@ export class BlockEvents extends BaseEventHandler {
         // Loreに残量を表示
         const lore = [
             `§7エネルギー: §f${storedEnergy}/${batteryInfo.capacity} MF`,
-            `§7充電率: §f${energyPercent}%`,
-            `§8§o設置すると残量が復元されます`
+            `§7充電率: §f${energyPercent}%`
         ];
         
         itemStack.setLore(lore);
